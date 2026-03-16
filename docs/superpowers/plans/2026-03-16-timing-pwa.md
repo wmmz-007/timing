@@ -1070,7 +1070,7 @@ export async function syncPendingRecords(
 npm test -- sync
 ```
 
-Expected: 2/2 PASS
+Expected: 5/5 PASS
 
 - [ ] **Step 5: Commit**
 
