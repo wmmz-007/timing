@@ -17,14 +17,25 @@ describe('Athlete type', () => {
     expectTypeOf<Athlete>().toHaveProperty('id')
     expectTypeOf<Athlete>().toHaveProperty('event_id')
     expectTypeOf<Athlete>().toHaveProperty('bib_number')
+    expectTypeOf<Athlete>().toHaveProperty('name')
     expectTypeOf<Athlete>().toHaveProperty('distance_id')
     expectTypeOf<Athlete>().toHaveProperty('gender')
     expectTypeOf<Athlete>().toHaveProperty('age_group')
   })
 })
 
-describe('Event.start_time', () => {
-  it('is optional', () => {
+describe('SubgroupPrizeOverride type', () => {
+  it('has required fields', () => {
+    expectTypeOf<SubgroupPrizeOverride>().toHaveProperty('id')
+    expectTypeOf<SubgroupPrizeOverride>().toHaveProperty('distance_id')
+    expectTypeOf<SubgroupPrizeOverride>().toHaveProperty('gender')
+    expectTypeOf<SubgroupPrizeOverride>().toHaveProperty('age_group')
+    expectTypeOf<SubgroupPrizeOverride>().toHaveProperty('top_n')
+  })
+})
+
+describe('Event type', () => {
+  it('start_time is optional', () => {
     expectTypeOf<Event['start_time']>().toEqualTypeOf<string | undefined>()
   })
   it('has overall_lockout', () => {
