@@ -96,3 +96,10 @@ export function getAthletes(eventId: string): Athlete[] {
   if (!raw) return []
   try { return JSON.parse(raw) as Athlete[] } catch { return [] }
 }
+
+export function clearEventCache(eventId: string): void {
+  localStorage.removeItem(pendingKey(eventId))
+  localStorage.removeItem(eventKey(eventId))
+  localStorage.removeItem(distancesKey(eventId))
+  localStorage.removeItem(athletesKey(eventId))
+}

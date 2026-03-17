@@ -4,6 +4,7 @@ import {
   removePendingRecord, removeRecordByBib,
   getEventById, saveEvent,
   saveDistances, getDistances, saveAthletes, getAthletes,
+  clearEventCache,
 } from '@/lib/storage'
 import type { EventDistance, Athlete, Event } from '@/types'
 
@@ -100,6 +101,26 @@ describe('athletes cache', () => {
     }]
     saveAthletes('evt-1', athletes)
     expect(getAthletes('evt-1')).toEqual(athletes)
+  })
+})
+
+describe('clearEventCache', () => {
+  it('removes all 4 LocalStorage keys for an event', () => {
+    localStorage.setItem('timing:event:e1', '{"id":"e1"}')
+    localStorage.setItem('timing:pending:e1', '[]')
+    localStorage.setItem('timing:distances:e1', '[]')
+    localStorage.setItem('timing:athletes:e1', '[]')
+    // Key for a different event — must NOT be removed
+    localStorage.setItem('timing:event:e2', '{"id":"e2"}')
+
+    clearEventCache('e1')
+
+    expect(localStorage.getItem('timing:event:e1')).toBeNull()
+    expect(localStorage.getItem('timing:pending:e1')).toBeNull()
+    expect(localStorage.getItem('timing:distances:e1')).toBeNull()
+    expect(localStorage.getItem('timing:athletes:e1')).toBeNull()
+    // Other event untouched
+    expect(localStorage.getItem('timing:event:e2')).not.toBeNull()
   })
 })
 

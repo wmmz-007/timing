@@ -2,9 +2,10 @@
 import { Plus, X } from 'lucide-react'
 
 export interface DistanceRow {
-  key: string      // client-side stable ID (crypto.randomUUID())
+  key: string        // client-side stable ID (crypto.randomUUID())
+  distanceId?: string  // present for rows loaded from DB; absent for new rows added in UI
   name: string
-  time: string     // HH:MM
+  time: string       // HH:MM
 }
 
 interface Props {
