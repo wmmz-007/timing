@@ -5,6 +5,7 @@ import { ChevronDown, ChevronUp, Trash2 } from 'lucide-react'
 import type { Event, EventDistance, Athlete, SubgroupPrizeOverride } from '@/types'
 import DistanceList, { type DistanceRow, rowToStartTime } from '@/components/DistanceList'
 import AthleteImport from '@/components/AthleteImport'
+import PrizeConfig from '@/components/PrizeConfig'
 
 export default function SettingsPage() {
   const { id } = useParams<{ id: string }>()
@@ -181,8 +182,28 @@ export default function SettingsPage() {
           </div>
         )}
       </div>
-      <div className="border border-gray-100 rounded-2xl mb-3 px-5 py-4 text-sm text-gray-400">
-        รางวัล — coming soon
+      {/* Section 3: Prizes */}
+      <div className="border border-gray-100 rounded-2xl mb-3 overflow-hidden">
+        <button
+          className="w-full flex items-center justify-between px-5 py-4 text-left"
+          onClick={() => setOpenSection(openSection === 3 ? 0 : 3)}
+        >
+          <span className="font-medium">รางวัล</span>
+          {openSection === 3 ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+        </button>
+        {openSection === 3 && event && (
+          <div className="px-5 pb-5">
+            <PrizeConfig
+              event={event}
+              distances={distances}
+              athletes={athletes}
+              overrides={overrides}
+              disabled={offline}
+              onUpdated={setOverrides}
+              onEventUpdated={setEvent}
+            />
+          </div>
+        )}
       </div>
     </main>
   )
