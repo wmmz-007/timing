@@ -35,6 +35,41 @@ export async function updateEventLockout(id: string, overallLockout: boolean): P
   if (error) throw error
 }
 
+export async function getEvents(): Promise<Event[]> {
+  const { data, error } = await supabase
+    .from('events')
+    .select('*')
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return (data ?? []) as Event[]
+}
+
+export async function updateEventName(id: string, name: string): Promise<void> {
+  const { error } = await supabase
+    .from('events')
+    .update({ name })
+    .eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteEvent(id: string): Promise<void> {
+  // Must delete athletes first — athletes.distance_id → event_distances is ON DELETE RESTRICT
+  const { error: err1 } = await supabase.from('athletes').delete().eq('event_id', id)
+  if (err1) throw err1
+  const { error: err2 } = await supabase.from('events').delete().eq('id', id)
+  if (err2) throw err2
+}
+
+export async function getEventStats(id: string): Promise<{ recordCount: number; athleteCount: number }> {
+  const [recordRes, athleteRes] = await Promise.all([
+    supabase.from('finish_records').select('*', { count: 'exact', head: true }).eq('event_id', id),
+    supabase.from('athletes').select('*', { count: 'exact', head: true }).eq('event_id', id),
+  ])
+  if (recordRes.error) throw recordRes.error
+  if (athleteRes.error) throw athleteRes.error
+  return { recordCount: recordRes.count ?? 0, athleteCount: athleteRes.count ?? 0 }
+}
+
 // ---- Distances ----
 
 export async function getDistancesForEvent(eventId: string): Promise<EventDistance[]> {
@@ -81,6 +116,12 @@ export async function deleteDistanceAndAthletes(distanceId: string): Promise<voi
     .delete()
     .eq('id', distanceId)
   if (err2) throw err2
+}
+
+export async function deleteDistance(id: string): Promise<void> {
+  // Plain delete — throws if athletes reference this distance (ON DELETE RESTRICT)
+  const { error } = await supabase.from('event_distances').delete().eq('id', id)
+  if (error) throw error
 }
 
 // ---- Athletes ----
