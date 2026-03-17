@@ -9,6 +9,7 @@ import type { Event, PendingRecord } from '@/types'
 import type { SpeechResult } from '@/lib/speech'
 import { addPendingRecord, getPendingRecords } from '@/lib/storage'
 import { syncPendingRecords } from '@/lib/sync'
+import { Check, X } from 'lucide-react'
 import { formatTime } from '@/lib/time'
 
 interface Props {
@@ -110,7 +111,7 @@ export default function CaptureScreen({ event }: Props) {
               onClick={() => saveRecord(duplicateWarning.bib, duplicateWarning.capturedAt, true)}
               className="flex-1 bg-yellow-700 text-white rounded-xl py-2.5 text-sm font-medium"
             >
-              ✓ เขียนทับ
+              <Check size={14} strokeWidth={2.5} className="inline mr-1" />เขียนทับ
             </button>
             <button
               onClick={() => { setDuplicateWarning(null); setPending(null) }}

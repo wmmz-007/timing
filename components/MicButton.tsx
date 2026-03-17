@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { Mic } from 'lucide-react'
 import { startSpeechRecognition, type SpeechResult } from '@/lib/speech'
 
 interface Props {
@@ -44,7 +45,7 @@ export default function MicButton({ onResult, onError, disabled }: Props) {
         disabled:opacity-40
       `}
     >
-      <span className="text-4xl mb-2">{listening ? '🔴' : '🎤'}</span>
+      <Mic size={40} strokeWidth={1.5} className="mb-2" />
       <span>{listening ? 'กำลังฟัง...' : 'กดพูดเลขบิบ'}</span>
     </button>
   )

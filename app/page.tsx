@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Timer } from 'lucide-react'
 import EventSetupForm from '@/components/EventSetupForm'
 import type { Event } from '@/types'
 
@@ -16,7 +17,7 @@ export default function HomePage() {
     <main className="min-h-screen flex flex-col items-center justify-center px-6">
       <div className="w-full max-w-sm">
         <div className="mb-10 text-center">
-          <span className="text-5xl">🏃</span>
+          <Timer className="mx-auto text-gray-900" size={48} strokeWidth={1.5} />
           <h1 className="mt-4 text-3xl font-semibold tracking-tight">Timing</h1>
           <p className="mt-2 text-gray-500 text-sm">บันทึกเวลานักวิ่ง</p>
         </div>
@@ -34,7 +35,7 @@ export default function HomePage() {
               onClick={() => setShowForm(false)}
               className="mb-4 text-sm text-gray-400"
             >
-              ← ยกเลิก
+              ‹ ยกเลิก
             </button>
             <EventSetupForm onCreated={handleCreated} />
           </div>

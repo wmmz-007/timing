@@ -1,3 +1,4 @@
+import { Check, X, ArrowRight } from 'lucide-react'
 import { formatTime } from '@/lib/time'
 
 interface Props {
@@ -17,7 +18,7 @@ export default function ConfirmCapture({ transcript, bib, capturedAt, timezone, 
       {bib ? (
         <div className="flex items-baseline gap-3 mb-5">
           <span className="text-4xl font-bold tracking-tight">{bib}</span>
-          <span className="text-gray-400 text-lg">→</span>
+          <ArrowRight size={18} className="text-gray-400" />
           <span className="text-2xl font-mono text-gray-700">
             {formatTime(capturedAt, timezone)}
           </span>
@@ -30,16 +31,16 @@ export default function ConfirmCapture({ transcript, bib, capturedAt, timezone, 
         {bib && (
           <button
             onClick={onConfirm}
-            className="flex-1 bg-black text-white rounded-xl py-3.5 font-medium"
+            className="flex-1 bg-black text-white rounded-xl py-3.5 font-medium flex items-center justify-center gap-2"
           >
-            ✓ บันทึก
+            <Check size={16} strokeWidth={2.5} /> บันทึก
           </button>
         )}
         <button
           onClick={onDiscard}
-          className="flex-1 bg-gray-200 text-gray-700 rounded-xl py-3.5 font-medium"
+          className="flex-1 bg-gray-200 text-gray-700 rounded-xl py-3.5 font-medium flex items-center justify-center gap-2"
         >
-          ✗ ยกเลิก
+          <X size={16} strokeWidth={2.5} /> ยกเลิก
         </button>
       </div>
     </div>
