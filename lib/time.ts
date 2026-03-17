@@ -1,3 +1,5 @@
+import type { Athlete, EventDistance } from '@/types'
+
 export function calcNetTime(startIso: string | undefined, finishIso: string): number {
   if (!startIso) return 0
   return new Date(finishIso).getTime() - new Date(startIso).getTime()
@@ -21,8 +23,6 @@ export function formatNetTime(ms: number): string {
   const s = totalSeconds % 60
   return [h, m, s].map((v) => String(v).padStart(2, '0')).join(':')
 }
-
-import type { Athlete, EventDistance } from '@/types'
 
 export function getDistanceStartTime(
   bib: string,

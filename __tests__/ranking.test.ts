@@ -116,3 +116,15 @@ describe('computeRanks — unregistered bib', () => {
     expect(map.has('999')).toBe(false)
   })
 })
+
+describe('computeRanks — lockout with overall_top_n = 1', () => {
+  it('overall winner is excluded from division when top_n is 1', () => {
+    const records = [makeRecord('001', 40 * 60000), makeRecord('002', 42 * 60000)]
+    const athletes = [makeAthlete('001', 'Male', '30-39'), makeAthlete('002', 'Male', '30-39')]
+    const distOne: EventDistance = { ...dist, overall_top_n: 1 }
+    const map = computeRanks(records, athletes, [distOne], [], true)
+    expect(map.get('001')?.overallRank).toBe(1)
+    expect(map.get('001')?.divisionRank).toBeNull()  // locked out
+    expect(map.get('002')?.divisionRank).toBe(1)     // eligible
+  })
+})

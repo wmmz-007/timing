@@ -84,7 +84,7 @@ export function computeRanks(
       map.get(bib)!.overallRank = r
       // Lockout: only exclude athletes ranked strictly within the top (overall_top_n - 1) positions
       // so that the last overall prize position is not locked out of division prizes
-      if (r < dist.overall_top_n) {
+      if (r <= Math.max(1, dist.overall_top_n - 1)) {
         overallWinners.add(bib)
       }
     }
