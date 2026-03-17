@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { X } from 'lucide-react'
 
 interface Props {
   onSubmit: (bib: string, capturedAt: string) => void
@@ -21,7 +22,7 @@ export default function ManualBibInput({ onSubmit }: Props) {
     if (!bib) return
     onSubmit(bib, new Date().toISOString())
     setBib('')
-    setOpen(false)
+    // Stay open — user can immediately enter next bib
   }
 
   if (!open) {
@@ -39,10 +40,17 @@ export default function ManualBibInput({ onSubmit }: Props) {
 
   return (
     <div className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4">
-      <div className="text-center mb-3">
-        <span className="text-3xl font-bold tracking-widest font-mono min-h-[2rem] block">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-3xl font-bold tracking-widest font-mono min-h-[2rem]">
           {bib || <span className="text-gray-300">—</span>}
         </span>
+        <button
+          onClick={() => { setBib(''); setOpen(false) }}
+          aria-label="close"
+          className="text-gray-400 p-1"
+        >
+          <X size={18} />
+        </button>
       </div>
       <div className="grid grid-cols-3 gap-2 mb-3">
         {keys.flat().map((k, i) => (
@@ -59,14 +67,13 @@ export default function ManualBibInput({ onSubmit }: Props) {
           </button>
         ))}
       </div>
-      <div className="flex gap-2">
-        <button onClick={() => { setBib(''); setOpen(false) }} className="flex-1 py-3 rounded-xl bg-gray-200 text-gray-700 font-medium">
-          ยกเลิก
-        </button>
-        <button onClick={handleSubmit} disabled={!bib} className="flex-1 py-3 rounded-xl bg-black text-white font-medium disabled:opacity-40">
-          บันทึก
-        </button>
-      </div>
+      <button
+        onClick={handleSubmit}
+        disabled={!bib}
+        className="w-full py-3 rounded-xl bg-black text-white font-medium disabled:opacity-40"
+      >
+        บันทึก
+      </button>
     </div>
   )
 }
