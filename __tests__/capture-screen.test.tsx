@@ -8,7 +8,6 @@ import type { Event, EventDistance, Athlete } from '@/types'
 const event: Event = {
   id: 'evt-1',
   name: 'Test Race',
-  start_time: '2026-03-17T03:00:00.000Z',
   timezone: 'Asia/Bangkok',
   overall_lockout: false,
 }

@@ -35,9 +35,6 @@ describe('SubgroupPrizeOverride type', () => {
 })
 
 describe('Event type', () => {
-  it('start_time is optional', () => {
-    expectTypeOf<Event['start_time']>().toEqualTypeOf<string | undefined>()
-  })
   it('has overall_lockout', () => {
     expectTypeOf<Event>().toHaveProperty('overall_lockout')
   })

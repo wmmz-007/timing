@@ -1,7 +1,6 @@
 export interface Event {
   id: string
   name: string
-  start_time?: string   // deprecated — use event_distances.start_time; removed in cleanup task
   timezone: string
   overall_lockout: boolean
 }
