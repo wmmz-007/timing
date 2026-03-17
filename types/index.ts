@@ -3,6 +3,7 @@ export interface Event {
   name: string
   timezone: string
   overall_lockout: boolean
+  created_at: string
 }
 
 export interface EventDistance {
