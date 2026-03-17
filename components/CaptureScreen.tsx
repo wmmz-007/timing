@@ -143,7 +143,7 @@ export default function CaptureScreen({ event, distances, athletes: _athletes }:
       // Manual-only mode: one-shot recognition session
       setListening(true)
       listeningRef.current = true
-      startSpeechRecognition(
+      stopRef.current = startSpeechRecognition(
         'th-TH',
         (result) => handleResult(result, true),
         (_error: string) => {

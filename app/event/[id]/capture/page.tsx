@@ -12,12 +12,17 @@ export default function CapturePage() {
   const [athletes, setAthletes] = useState<Athlete[]>([])
 
   useEffect(() => {
+    let cancelled = false
     async function load() {
       const { getEventById } = await import('@/lib/storage')
       const local = getEventById(id)
-      if (local) { setEvent(local) } else {
+      if (local) {
+        if (cancelled) return
+        setEvent(local)
+      } else {
         const { getEvent } = await import('@/lib/db')
         const remote = await getEvent(id)
+        if (cancelled) return
         if (remote) {
           const { saveEvent } = await import('@/lib/storage')
           saveEvent(remote)
@@ -37,15 +42,18 @@ export default function CapturePage() {
         const { saveDistances, saveAthletes } = await import('@/lib/storage')
         saveDistances(id, dists)
         saveAthletes(id, athls)
+        if (cancelled) return
         setDistances(dists)
         setAthletes(athls)
       } else {
         const { getDistances, getAthletes } = await import('@/lib/storage')
+        if (cancelled) return
         setDistances(getDistances(id))
         setAthletes(getAthletes(id))
       }
     }
     load()
+    return () => { cancelled = true }
   }, [id, router])
 
   useEffect(() => {

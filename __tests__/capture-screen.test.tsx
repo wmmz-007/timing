@@ -57,6 +57,8 @@ vi.mock('@/lib/speech', () => ({
 vi.mock('@/lib/storage', () => ({
   getPendingRecords: vi.fn(() => []),
   addPendingRecord: vi.fn(),
+  removePendingRecord: vi.fn(),
+  removeRecordByBib: vi.fn(),
 }))
 
 vi.mock('@/lib/sync', () => ({
