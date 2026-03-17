@@ -1,16 +1,45 @@
-import type { FinishRecord, Event } from '@/types'
-import { calcNetTime, formatTime, formatNetTime } from './time'
+import type { FinishRecord, Event, Athlete, EventDistance } from '@/types'
+import type { RankMap } from './ranking'
+import { getDistanceStartTime, formatTime, formatNetTime, calcNetTime } from './time'
 
-export function generateCsv(records: FinishRecord[], event: Event): string {
-  const sorted = [...records].sort((a, b) =>
-    calcNetTime(event.start_time, a.finish_time) - calcNetTime(event.start_time, b.finish_time)
-  )
-  const header = 'bib,finish_time,net_time'
-  const rows = sorted.map((r) => {
-    const finishFormatted = formatTime(r.finish_time, event.timezone)
-    const netMs = calcNetTime(event.start_time, r.finish_time)
-    return `${r.bib_number},${finishFormatted},${formatNetTime(netMs)}`
+export function generateCsv(
+  records: FinishRecord[],
+  event: Event,
+  athletes: Athlete[],
+  distances: EventDistance[],
+  rankMap: RankMap
+): string {
+  const athleteByBib = new Map(athletes.map((a) => [a.bib_number, a]))
+  const distanceById = new Map(distances.map((d) => [d.id, d]))
+
+  const sorted = [...records].sort((a, b) => {
+    const startA = getDistanceStartTime(a.bib_number, athletes, distances) ?? distances[0]?.start_time ?? ''
+    const startB = getDistanceStartTime(b.bib_number, athletes, distances) ?? distances[0]?.start_time ?? ''
+    return calcNetTime(startA, a.finish_time) - calcNetTime(startB, b.finish_time)
   })
+
+  const header = 'bib,name,distance,gender,age_group,finish_time,net_time,overall_rank,division_rank'
+
+  const rows = sorted.map((r) => {
+    const athlete = athleteByBib.get(r.bib_number)
+    const dist = athlete ? distanceById.get(athlete.distance_id) : undefined
+    const startTime = getDistanceStartTime(r.bib_number, athletes, distances)
+    const finishFormatted = formatTime(r.finish_time, event.timezone)
+    const netTime = startTime ? formatNetTime(calcNetTime(startTime, r.finish_time)) : ''
+    const ranks = rankMap.get(r.bib_number)
+    return [
+      r.bib_number,
+      athlete?.name ?? '',
+      dist?.name ?? '',
+      athlete?.gender ?? '',
+      athlete?.age_group ?? '',
+      finishFormatted,
+      netTime,
+      ranks?.overallRank ?? '',
+      ranks?.divisionRank ?? '',
+    ].join(',')
+  })
+
   return [header, ...rows].join('\n')
 }
 

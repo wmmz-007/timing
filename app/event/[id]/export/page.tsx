@@ -29,8 +29,9 @@ export default function ExportPage() {
 
   function handleDownload() {
     if (!event) return
-    const csv = generateCsv(records, event)
-    const date = event.start_time ? new Date(event.start_time).toISOString().slice(0, 10) : 'unknown'
+    // TODO (Task 12): load athletes, distances, rankMap and pass them here
+    const csv = generateCsv(records, event, [], [], new Map())
+    const date = new Date().toISOString().slice(0, 10)
     downloadCsv(csv, `timing-${date}.csv`)
   }
 
