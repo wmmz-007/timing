@@ -4,6 +4,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { ChevronDown, ChevronUp, Trash2 } from 'lucide-react'
 import type { Event, EventDistance, Athlete, SubgroupPrizeOverride } from '@/types'
 import DistanceList, { type DistanceRow, rowToStartTime } from '@/components/DistanceList'
+import AthleteImport from '@/components/AthleteImport'
 
 export default function SettingsPage() {
   const { id } = useParams<{ id: string }>()
@@ -160,9 +161,25 @@ export default function SettingsPage() {
         )}
       </div>
 
-      {/* Sections 2 & 3 placeholder — implemented in next tasks */}
-      <div className="border border-gray-100 rounded-2xl mb-3 px-5 py-4 text-sm text-gray-400">
-        นักกีฬา (CSV Import) — coming soon
+      {/* Section 2: Athletes */}
+      <div className="border border-gray-100 rounded-2xl mb-3 overflow-hidden">
+        <button
+          className="w-full flex items-center justify-between px-5 py-4 text-left"
+          onClick={() => setOpenSection(2)}
+        >
+          <span className="font-medium">นักกีฬา</span>
+          {openSection === 2 ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+        </button>
+        {openSection === 2 && (
+          <div className="px-5 pb-5">
+            <AthleteImport
+              eventId={id}
+              distances={distances}
+              disabled={offline}
+              onImported={setAthletes}
+            />
+          </div>
+        )}
       </div>
       <div className="border border-gray-100 rounded-2xl mb-3 px-5 py-4 text-sm text-gray-400">
         รางวัล — coming soon
