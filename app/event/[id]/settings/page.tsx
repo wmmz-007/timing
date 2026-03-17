@@ -14,11 +14,12 @@ export default function SettingsPage() {
   const [athletes, setAthletes] = useState<Athlete[]>([])
   const [overrides, setOverrides] = useState<SubgroupPrizeOverride[]>([])
   const [offline, setOffline] = useState(false)
-  const [openSection, setOpenSection] = useState<1 | 2 | 3>(1)
+  const [openSection, setOpenSection] = useState<0 | 1 | 2 | 3>(1)
 
   useEffect(() => {
+    let cancelled = false
     async function load() {
-      if (!navigator.onLine) { setOffline(true); return }
+      if (!navigator.onLine) { if (!cancelled) setOffline(true); return }
       const { getEvent, getDistancesForEvent, getAthletesForEvent, getSubgroupOverrides } = await import('@/lib/db')
       const { saveEvent, saveDistances, saveAthletes } = await import('@/lib/storage')
       const [ev, dists, aths, ovrs] = await Promise.all([
@@ -27,6 +28,7 @@ export default function SettingsPage() {
         getAthletesForEvent(id),
         getSubgroupOverrides(id),
       ])
+      if (cancelled) return
       if (!ev) { router.push('/'); return }
       saveEvent(ev)
       saveDistances(id, dists)
@@ -37,6 +39,7 @@ export default function SettingsPage() {
       setOverrides(ovrs)
     }
     load()
+    return () => { cancelled = true }
   }, [id, router])
 
   // ---- Section 1: Distances ----
@@ -79,6 +82,7 @@ export default function SettingsPage() {
   }
 
   async function handleDeleteDistance(distId: string) {
+    if (offline) return
     const count = athletes.filter((a) => a.distance_id === distId).length
     const msg = count > 0
       ? `ระยะนี้มีนักกีฬา ${count} คน — ลบแล้วนักกีฬาเหล่านี้จะถูกลบด้วย ยืนยันไหม?`
@@ -115,7 +119,7 @@ export default function SettingsPage() {
       <div className="border border-gray-100 rounded-2xl mb-3 overflow-hidden">
         <button
           className="w-full flex items-center justify-between px-5 py-4 text-left"
-          onClick={() => setOpenSection(openSection === 1 ? 0 as 1 : 1)}
+          onClick={() => setOpenSection(openSection === 1 ? 0 : 1)}
         >
           <span className="font-medium">ระยะและเวลาปล่อยตัว</span>
           {openSection === 1 ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
@@ -134,6 +138,7 @@ export default function SettingsPage() {
                   <DistanceList
                     rows={distRows.filter((r) => r.key === dist.id)}
                     date={new Date(dist.start_time).toISOString().slice(0, 10)}
+                    hideAdd
                     onChange={(rows) => handleDistanceChange(
                       distRows.map((r) => r.key === dist.id ? rows[0] : r)
                     )}

@@ -11,9 +11,10 @@ interface Props {
   rows: DistanceRow[]
   date: string     // YYYY-MM-DD, used to build ISO start_time on submit
   onChange: (rows: DistanceRow[]) => void
+  hideAdd?: boolean
 }
 
-export default function DistanceList({ rows, date, onChange }: Props) {
+export default function DistanceList({ rows, date, onChange, hideAdd }: Props) {
   function update(key: string, field: keyof DistanceRow, value: string) {
     onChange(rows.map((r) => r.key === key ? { ...r, [field]: value } : r))
   }
@@ -57,13 +58,15 @@ export default function DistanceList({ rows, date, onChange }: Props) {
           </button>
         </div>
       ))}
-      <button
-        type="button"
-        onClick={addRow}
-        className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 mt-1"
-      >
-        <Plus size={14} /> เพิ่มระยะ
-      </button>
+      {!hideAdd && (
+        <button
+          type="button"
+          onClick={addRow}
+          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 mt-1"
+        >
+          <Plus size={14} /> เพิ่มระยะ
+        </button>
+      )}
     </div>
   )
 }
