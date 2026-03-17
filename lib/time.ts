@@ -21,3 +21,22 @@ export function formatNetTime(ms: number): string {
   const s = totalSeconds % 60
   return [h, m, s].map((v) => String(v).padStart(2, '0')).join(':')
 }
+
+import type { Athlete, EventDistance } from '@/types'
+
+export function getDistanceStartTime(
+  bib: string,
+  athletes: Athlete[],
+  distances: EventDistance[]
+): string | null {
+  const athlete = athletes.find((a) => a.bib_number === bib)
+  if (athlete) {
+    const dist = distances.find((d) => d.id === athlete.distance_id)
+    if (dist) return dist.start_time
+  }
+  // Fallback: earliest distance by start_time
+  if (distances.length === 0) return null
+  return [...distances].sort(
+    (a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
+  )[0].start_time
+}
