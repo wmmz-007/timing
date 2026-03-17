@@ -1,4 +1,4 @@
-import type { Event, PendingRecord } from '@/types'
+import type { Event, PendingRecord, EventDistance, Athlete } from '@/types'
 
 function pendingKey(eventId: string): string {
   return `timing:pending:${eventId}`
@@ -59,8 +59,40 @@ export function getEventById(eventId: string): Event | null {
   const raw = localStorage.getItem(eventKey(eventId))
   if (!raw) return null
   try {
-    return JSON.parse(raw) as Event
+    const parsed = JSON.parse(raw) as Record<string, unknown>
+    delete parsed['start_time']   // strip legacy field
+    return parsed as unknown as Event
   } catch {
     return null
   }
+}
+
+// ---- Distances cache ----
+function distancesKey(eventId: string): string {
+  return `timing:distances:${eventId}`
+}
+
+export function saveDistances(eventId: string, distances: EventDistance[]): void {
+  localStorage.setItem(distancesKey(eventId), JSON.stringify(distances))
+}
+
+export function getDistances(eventId: string): EventDistance[] {
+  const raw = localStorage.getItem(distancesKey(eventId))
+  if (!raw) return []
+  try { return JSON.parse(raw) as EventDistance[] } catch { return [] }
+}
+
+// ---- Athletes cache ----
+function athletesKey(eventId: string): string {
+  return `timing:athletes:${eventId}`
+}
+
+export function saveAthletes(eventId: string, athletes: Athlete[]): void {
+  localStorage.setItem(athletesKey(eventId), JSON.stringify(athletes))
+}
+
+export function getAthletes(eventId: string): Athlete[] {
+  const raw = localStorage.getItem(athletesKey(eventId))
+  if (!raw) return []
+  try { return JSON.parse(raw) as Athlete[] } catch { return [] }
 }

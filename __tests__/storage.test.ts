@@ -1,12 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import {
-  getPendingRecords,
-  addPendingRecord,
-  markSynced,
-  removeSynced,
-  getEventById,
-  saveEvent,
+  getPendingRecords, addPendingRecord, markSynced, removeSynced,
+  removePendingRecord, removeRecordByBib,
+  getEventById, saveEvent,
+  saveDistances, getDistances, saveAthletes, getAthletes,
 } from '@/lib/storage'
+import type { EventDistance, Athlete, Event } from '@/types'
 
 beforeEach(() => {
   localStorage.clear()
@@ -68,8 +67,51 @@ describe('event storage', () => {
   })
 
   it('saves and retrieves an event', () => {
-    const event: import('@/types').Event = { id: 'evt-1', name: 'Test', start_time: '2026-03-16T07:00:00+07:00', timezone: 'Asia/Bangkok', overall_lockout: false }
+    const event: Event = { id: 'evt-1', name: 'Test', timezone: 'Asia/Bangkok', overall_lockout: false }
     saveEvent(event)
     expect(getEventById('evt-1')).toEqual(event)
+  })
+})
+
+describe('distances cache', () => {
+  it('returns empty array when nothing stored', () => {
+    expect(getDistances('evt-1')).toEqual([])
+  })
+
+  it('saves and retrieves distances', () => {
+    const distances: EventDistance[] = [{
+      id: 'd1', event_id: 'evt-1', name: '10K',
+      start_time: '2026-03-17T07:00:00+07:00', overall_top_n: 3, default_top_n: 3,
+    }]
+    saveDistances('evt-1', distances)
+    expect(getDistances('evt-1')).toEqual(distances)
+  })
+})
+
+describe('athletes cache', () => {
+  it('returns empty array when nothing stored', () => {
+    expect(getAthletes('evt-1')).toEqual([])
+  })
+
+  it('saves and retrieves athletes', () => {
+    const athletes: Athlete[] = [{
+      id: 'a1', event_id: 'evt-1', bib_number: '235', name: 'สมชาย',
+      distance_id: 'd1', gender: 'Male', age_group: '30-39',
+    }]
+    saveAthletes('evt-1', athletes)
+    expect(getAthletes('evt-1')).toEqual(athletes)
+  })
+})
+
+describe('getEventById strips stale start_time', () => {
+  it('removes start_time field if present in cached data', () => {
+    // Simulate old cached event with start_time
+    localStorage.setItem('timing:event:evt-1', JSON.stringify({
+      id: 'evt-1', name: 'Test', start_time: '2026-03-16T07:00:00+07:00',
+      timezone: 'Asia/Bangkok', overall_lockout: false,
+    }))
+    const event = getEventById('evt-1')
+    expect(event).not.toBeNull()
+    expect((event as unknown as Record<string, unknown>)['start_time']).toBeUndefined()
   })
 })
