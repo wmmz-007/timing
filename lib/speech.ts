@@ -53,9 +53,9 @@ export function startSpeechRecognition(
   onError: (error: string) => void
 ): () => void {
   const SpeechRecognition =
-    (window as typeof window & { SpeechRecognition?: typeof window.SpeechRecognition; webkitSpeechRecognition?: typeof window.SpeechRecognition })
+    ((window as unknown) as { SpeechRecognition?: any; webkitSpeechRecognition?: any })
       .SpeechRecognition ||
-    (window as typeof window & { webkitSpeechRecognition?: typeof window.SpeechRecognition }).webkitSpeechRecognition
+    ((window as unknown) as { webkitSpeechRecognition?: any }).webkitSpeechRecognition
 
   if (!SpeechRecognition) {
     onError('Web Speech API is not supported in this browser')
@@ -65,13 +65,13 @@ export function startSpeechRecognition(
   recognition.lang = lang
   recognition.interimResults = false
   recognition.maxAlternatives = 1
-  recognition.onresult = (event) => {
+  recognition.onresult = (event: any) => {
     const transcript = event.results[0][0].transcript
     const capturedAt = new Date().toISOString()
     const bib = parseTranscriptToBib(transcript)
     onResult({ transcript, bib, capturedAt })
   }
-  recognition.onerror = (event) => { onError(event.error) }
+  recognition.onerror = (event: any) => { onError(event.error) }
   recognition.start()
   return () => recognition.stop()
 }

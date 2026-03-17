@@ -82,7 +82,7 @@ describe('syncPendingRecords', () => {
       eq: vi.fn().mockReturnThis(),
       maybeSingle: maybeSingleMock,
       insert: insertMock,
-    } as ReturnType<typeof supabase.from>)
+    } as unknown as ReturnType<typeof supabase.from>)
 
     const onConflict = vi.fn()
     await syncPendingRecords('evt-1', onConflict)
