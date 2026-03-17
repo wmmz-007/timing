@@ -30,7 +30,7 @@ export default function ExportPage() {
   function handleDownload() {
     if (!event) return
     const csv = generateCsv(records, event)
-    const date = new Date(event.start_time).toISOString().slice(0, 10)
+    const date = event.start_time ? new Date(event.start_time).toISOString().slice(0, 10) : 'unknown'
     downloadCsv(csv, `timing-${date}.csv`)
   }
 

@@ -1,8 +1,10 @@
-export function calcNetTime(startIso: string, finishIso: string): number {
+export function calcNetTime(startIso: string | undefined, finishIso: string): number {
+  if (!startIso) return 0
   return new Date(finishIso).getTime() - new Date(startIso).getTime()
 }
 
-export function formatTime(iso: string, timezone: string): string {
+export function formatTime(iso: string | undefined, timezone: string): string {
+  if (!iso) return '--:--:--'
   return new Intl.DateTimeFormat('en-GB', {
     timeZone: timezone,
     hour: '2-digit',

@@ -68,7 +68,7 @@ describe('event storage', () => {
   })
 
   it('saves and retrieves an event', () => {
-    const event = { id: 'evt-1', name: 'Test', start_time: '2026-03-16T07:00:00+07:00', timezone: 'Asia/Bangkok' }
+    const event: import('@/types').Event = { id: 'evt-1', name: 'Test', start_time: '2026-03-16T07:00:00+07:00', timezone: 'Asia/Bangkok', overall_lockout: false }
     saveEvent(event)
     expect(getEventById('evt-1')).toEqual(event)
   })

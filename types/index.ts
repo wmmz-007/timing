@@ -1,21 +1,49 @@
 export interface Event {
   id: string
   name: string
-  start_time: string    // ISO 8601 timestamptz, e.g. "2026-03-16T07:00:00+07:00"
-  timezone: string      // IANA timezone, e.g. "Asia/Bangkok"
+  start_time?: string   // deprecated — use event_distances.start_time; removed in cleanup task
+  timezone: string
+  overall_lockout: boolean
+}
+
+export interface EventDistance {
+  id: string
+  event_id: string
+  name: string
+  start_time: string    // ISO 8601 timestamptz
+  overall_top_n: number
+  default_top_n: number
+}
+
+export interface Athlete {
+  id: string
+  event_id: string
+  bib_number: string
+  name: string
+  distance_id: string
+  gender: string
+  age_group: string
+}
+
+export interface SubgroupPrizeOverride {
+  id: string
+  distance_id: string
+  gender: string
+  age_group: string
+  top_n: number
 }
 
 export interface FinishRecord {
   id: string
   event_id: string
-  bib_number: string    // string to preserve leading zeros
-  finish_time: string   // ISO 8601 timestamptz
+  bib_number: string
+  finish_time: string
   created_at: string
 }
 
 // A record not yet synced to Supabase, kept in Local Storage
 export interface PendingRecord {
-  local_id: string      // uuid generated client-side
+  local_id: string
   event_id: string
   bib_number: string
   finish_time: string

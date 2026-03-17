@@ -10,6 +10,7 @@ const event: Event = {
   name: 'Test Race',
   start_time: '2026-03-17T03:00:00.000Z',
   timezone: 'Asia/Bangkok',
+  overall_lockout: false,
 }
 
 let capturedOnResult: ((r: speech.SpeechResult) => void) | null = null

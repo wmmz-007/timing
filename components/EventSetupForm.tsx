@@ -30,6 +30,7 @@ export default function EventSetupForm({ onCreated }: Props) {
         name,
         start_time: startTime,
         timezone: 'Asia/Bangkok',
+        overall_lockout: false,
       })
 
       saveEvent(event)

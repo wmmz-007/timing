@@ -7,6 +7,7 @@ const event: Event = {
   name: 'Test Race',
   start_time: '2026-03-16T07:00:00+07:00',
   timezone: 'Asia/Bangkok',
+  overall_lockout: false,
 }
 
 const records: FinishRecord[] = [
