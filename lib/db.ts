@@ -106,10 +106,19 @@ export async function upsertAthletes(eventId: string, athletes: Omit<Athlete, 'i
 // ---- Subgroup prize overrides ----
 
 export async function getSubgroupOverrides(eventId: string): Promise<SubgroupPrizeOverride[]> {
+  // First get distance IDs for this event
+  const { data: distData, error: distErr } = await supabase
+    .from('event_distances')
+    .select('id')
+    .eq('event_id', eventId)
+  if (distErr) throw distErr
+  const distanceIds = (distData ?? []).map((d: { id: string }) => d.id)
+  if (distanceIds.length === 0) return []
+
   const { data, error } = await supabase
     .from('subgroup_prize_overrides')
-    .select('*, event_distances!inner(event_id)')
-    .eq('event_distances.event_id', eventId)
+    .select('*')
+    .in('distance_id', distanceIds)
   if (error) throw error
   return (data ?? []) as SubgroupPrizeOverride[]
 }

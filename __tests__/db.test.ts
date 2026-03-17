@@ -17,7 +17,7 @@ import {
 
 const mockChain = (returnValue: unknown) => {
   const chain: Record<string, unknown> = {}
-  const methods = ['select', 'insert', 'update', 'eq', 'order', 'single', 'maybeSingle']
+  const methods = ['select', 'insert', 'update', 'delete', 'upsert', 'eq', 'in', 'order', 'single', 'maybeSingle']
   methods.forEach((m) => { chain[m] = vi.fn(() => chain) })
   chain['then'] = vi.fn((cb: (v: unknown) => unknown) => Promise.resolve(cb(returnValue)))
   return chain
@@ -79,6 +79,7 @@ describe('createEventWithDistances', () => {
     expect(mockRpc).toHaveBeenCalledWith('create_event_with_distances', expect.objectContaining({
       p_name: 'Test',
       p_timezone: 'Asia/Bangkok',
+      p_distances: JSON.stringify([{ name: '10K', start_time: '2026-03-17T07:00:00+07:00' }]),
     }))
     expect(result.name).toBe('Test')
   })
@@ -103,5 +104,21 @@ describe('getAthletesForEvent', () => {
     const result = await getAthletesForEvent('evt-1')
     expect(supabase.from).toHaveBeenCalledWith('athletes')
     expect(result).toEqual(mockData)
+  })
+})
+
+describe('deleteDistanceAndAthletes', () => {
+  it('throws and does not delete distance if athletes delete fails', async () => {
+    const errChain = mockChain({ data: null, error: { message: 'fail' } })
+    vi.mocked(supabase.from).mockReturnValue(errChain as unknown as ReturnType<typeof supabase.from>)
+    await expect(deleteDistanceAndAthletes('d1')).rejects.toEqual({ message: 'fail' })
+  })
+})
+
+describe('upsertAthletes', () => {
+  it('throws and does not insert if delete fails', async () => {
+    const errChain = mockChain({ data: null, error: { message: 'del fail' } })
+    vi.mocked(supabase.from).mockReturnValue(errChain as unknown as ReturnType<typeof supabase.from>)
+    await expect(upsertAthletes('evt-1', [{ event_id: 'evt-1', bib_number: '1', name: '', distance_id: 'd1', gender: '', age_group: '' }])).rejects.toEqual({ message: 'del fail' })
   })
 })
