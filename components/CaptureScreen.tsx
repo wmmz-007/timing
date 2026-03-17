@@ -5,7 +5,7 @@ import MicButton from './MicButton'
 import ManualBibInput from './ManualBibInput'
 import FinishLog from './FinishLog'
 import CaptureToast, { type Toast } from './CaptureToast'
-import type { Event, PendingRecord } from '@/types'
+import type { Event, EventDistance, Athlete, PendingRecord } from '@/types'
 import type { SpeechResult } from '@/lib/speech'
 import { startSpeechRecognition } from '@/lib/speech'
 import { addPendingRecord, getPendingRecords, removePendingRecord, removeRecordByBib } from '@/lib/storage'
@@ -14,9 +14,11 @@ import { formatTime } from '@/lib/time'
 
 interface Props {
   event: Event
+  distances: EventDistance[]
+  athletes: Athlete[]
 }
 
-export default function CaptureScreen({ event }: Props) {
+export default function CaptureScreen({ event, distances, athletes: _athletes }: Props) {
   const [listening, setListening] = useState(false)
   const [paused, setPaused] = useState(false)
   const [overwriteBib, setOverwriteBib] = useState<string | null>(null)
@@ -198,12 +200,25 @@ export default function CaptureScreen({ event }: Props) {
         onDismiss={handleDismiss}
       />
 
-      <div className="w-full text-center">
-        <p className="text-xs text-gray-400 uppercase tracking-wider font-medium">ปล่อยตัว</p>
-        <p className="text-2xl font-mono font-semibold mt-0.5">
-          {formatTime(event.start_time, event.timezone)}
-        </p>
-      </div>
+      {distances.length === 0 ? null : distances.length === 1 ? (
+        <div className="w-full text-center">
+          <p className="text-xs text-gray-400 uppercase tracking-wider font-medium">ปล่อยตัว</p>
+          <p className="text-2xl font-mono font-semibold mt-0.5">
+            {formatTime(distances[0].start_time, event.timezone)}
+          </p>
+        </div>
+      ) : (
+        <div className="w-full text-center">
+          <div className="space-y-0.5">
+            {distances.map((d) => (
+              <p key={d.id} className="text-sm font-mono">
+                <span className="text-gray-400">{d.name}</span>{' '}
+                <span className="font-semibold">{formatTime(d.start_time, event.timezone)}</span>
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="flex-1 flex items-center justify-center">
         <MicButton listening={listening} onToggle={handleToggle} />
