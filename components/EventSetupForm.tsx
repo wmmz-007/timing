@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import type { Event } from '@/types'
+import DistanceList, { type DistanceRow, rowToStartTime } from './DistanceList'
 
 interface Props {
   onCreated: (event: Event) => void
@@ -9,13 +10,15 @@ interface Props {
 export default function EventSetupForm({ onCreated }: Props) {
   const [name, setName] = useState('')
   const [date, setDate] = useState('')
-  const [time, setTime] = useState('07:00')
+  const [distances, setDistances] = useState<DistanceRow[]>([
+    { key: crypto.randomUUID(), name: '', time: '07:00' },
+  ])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!name || !date || !time) return
+    if (!name || !date) return
     setLoading(true)
     setError(null)
 
@@ -23,13 +26,12 @@ export default function EventSetupForm({ onCreated }: Props) {
       const { createEventWithDistances } = await import('@/lib/db')
       const { saveEvent } = await import('@/lib/storage')
 
-      // Combine date + time in Asia/Bangkok (UTC+7)
-      const startTime = new Date(`${date}T${time}:00+07:00`).toISOString()
+      const distancePayload = distances.map((row) => ({
+        name: row.name,
+        start_time: rowToStartTime(date, row.time),
+      }))
 
-      const event = await createEventWithDistances(name, 'Asia/Bangkok', [
-        { name: 'Default', start_time: startTime },
-      ])
-
+      const event = await createEventWithDistances(name, 'Asia/Bangkok', distancePayload)
       saveEvent(event)
       onCreated(event)
     } catch (err) {
@@ -64,14 +66,8 @@ export default function EventSetupForm({ onCreated }: Props) {
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">เวลาปล่อยตัว</label>
-        <input
-          type="time"
-          value={time}
-          onChange={(e) => setTime(e.target.value)}
-          className="w-full border border-gray-200 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-black"
-          required
-        />
+        <label className="block text-sm font-medium text-gray-700 mb-2">ระยะและเวลาปล่อยตัว</label>
+        <DistanceList rows={distances} date={date} onChange={setDistances} />
       </div>
       {error && <p className="text-red-500 text-sm">{error}</p>}
       <button
