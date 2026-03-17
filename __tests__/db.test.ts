@@ -8,7 +8,12 @@ vi.mock('@/lib/supabase', () => ({
 }))
 
 import { supabase } from '@/lib/supabase'
-import { createEvent, getEvent, createFinishRecord, getFinishRecords } from '@/lib/db'
+import {
+  getEvent, createFinishRecord, getFinishRecords,
+  createEventWithDistances, getDistancesForEvent,
+  getAthletesForEvent, upsertAthletes, getSubgroupOverrides, upsertSubgroupOverride, deleteSubgroupOverride,
+  updateDistance, deleteDistanceAndAthletes,
+} from '@/lib/db'
 
 const mockChain = (returnValue: unknown) => {
   const chain: Record<string, unknown> = {}
@@ -20,15 +25,6 @@ const mockChain = (returnValue: unknown) => {
 
 beforeEach(() => vi.clearAllMocks())
 
-describe('createEvent', () => {
-  it('inserts event and returns data', async () => {
-    const mockEvent = { id: 'evt-1', name: 'Test', timezone: 'Asia/Bangkok', overall_lockout: false }
-    const chain = mockChain({ data: mockEvent, error: null })
-    vi.mocked(supabase.from).mockReturnValue(chain as unknown as ReturnType<typeof supabase.from>)
-    const result = await createEvent({ name: 'Test', timezone: 'Asia/Bangkok', overall_lockout: false })
-    expect(result).toEqual(mockEvent)
-  })
-})
 
 describe('getEvent', () => {
   it('returns event by id', async () => {
@@ -64,5 +60,48 @@ describe('getFinishRecords', () => {
     vi.mocked(supabase.from).mockReturnValue(chain as unknown as ReturnType<typeof supabase.from>)
     const result = await getFinishRecords('evt-1')
     expect(result).toEqual(mockRecords)
+  })
+})
+
+describe('createEventWithDistances', () => {
+  it('calls rpc with correct params', async () => {
+    const mockEvent = { id: 'evt-1', name: 'Test', timezone: 'Asia/Bangkok', overall_lockout: false }
+    const rpcChain = {
+      data: mockEvent,
+      error: null,
+      then: vi.fn((cb: (v: unknown) => unknown) => Promise.resolve(cb({ data: mockEvent, error: null }))),
+    }
+    const mockRpc = vi.fn(() => rpcChain)
+    vi.mocked(supabase as unknown as { rpc: typeof mockRpc }).rpc = mockRpc
+    const result = await createEventWithDistances('Test', 'Asia/Bangkok', [
+      { name: '10K', start_time: '2026-03-17T07:00:00+07:00' },
+    ])
+    expect(mockRpc).toHaveBeenCalledWith('create_event_with_distances', expect.objectContaining({
+      p_name: 'Test',
+      p_timezone: 'Asia/Bangkok',
+    }))
+    expect(result.name).toBe('Test')
+  })
+})
+
+describe('getDistancesForEvent', () => {
+  it('queries event_distances by event_id', async () => {
+    const mockData = [{ id: 'd1', event_id: 'evt-1', name: '10K', start_time: '', overall_top_n: 3, default_top_n: 3 }]
+    const chain = mockChain({ data: mockData, error: null })
+    vi.mocked(supabase.from).mockReturnValue(chain as unknown as ReturnType<typeof supabase.from>)
+    const result = await getDistancesForEvent('evt-1')
+    expect(supabase.from).toHaveBeenCalledWith('event_distances')
+    expect(result).toEqual(mockData)
+  })
+})
+
+describe('getAthletesForEvent', () => {
+  it('queries athletes by event_id', async () => {
+    const mockData = [{ id: 'a1', event_id: 'evt-1', bib_number: '235', name: '', distance_id: 'd1', gender: 'Male', age_group: '30-39' }]
+    const chain = mockChain({ data: mockData, error: null })
+    vi.mocked(supabase.from).mockReturnValue(chain as unknown as ReturnType<typeof supabase.from>)
+    const result = await getAthletesForEvent('evt-1')
+    expect(supabase.from).toHaveBeenCalledWith('athletes')
+    expect(result).toEqual(mockData)
   })
 })

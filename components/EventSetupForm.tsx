@@ -20,17 +20,15 @@ export default function EventSetupForm({ onCreated }: Props) {
     setError(null)
 
     try {
-      const { createEvent } = await import('@/lib/db')
+      const { createEventWithDistances } = await import('@/lib/db')
       const { saveEvent } = await import('@/lib/storage')
 
       // Combine date + time in Asia/Bangkok (UTC+7)
       const startTime = new Date(`${date}T${time}:00+07:00`).toISOString()
 
-      const event = await createEvent({
-        name,
-        timezone: 'Asia/Bangkok',
-        overall_lockout: false,
-      })
+      const event = await createEventWithDistances(name, 'Asia/Bangkok', [
+        { name: 'Default', start_time: startTime },
+      ])
 
       saveEvent(event)
       onCreated(event)
