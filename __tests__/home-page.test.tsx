@@ -216,4 +216,52 @@ describe('HomePage', () => {
     // Other event remains
     expect(screen.getByText('งานวิ่ง Beta')).toBeInTheDocument()
   })
+
+  it('shows error in panel when getEventStats rejects', async () => {
+    const { getEvents, getEventStats } = await import('@/lib/db')
+    vi.mocked(getEvents).mockResolvedValue([event1])
+    vi.mocked(getEventStats).mockRejectedValue(new Error('stats error'))
+
+    await renderPage()
+
+    await waitFor(() => {
+      expect(screen.getByText('งานวิ่ง Alpha')).toBeInTheDocument()
+    })
+
+    fireEvent.click(screen.getByLabelText('ลบ งานวิ่ง Alpha'))
+
+    await waitFor(() => {
+      expect(screen.getByText('โหลดข้อมูลไม่ได้')).toBeInTheDocument()
+    })
+  })
+
+  it('shows error in panel when deleteEvent rejects and keeps event in list', async () => {
+    const { getEvents, getEventStats, deleteEvent } = await import('@/lib/db')
+    const { clearEventCache } = await import('@/lib/storage')
+    vi.mocked(getEvents).mockResolvedValue([event1])
+    vi.mocked(getEventStats).mockResolvedValue({ recordCount: 5, athleteCount: 3 })
+    vi.mocked(deleteEvent).mockRejectedValue(new Error('delete error'))
+    vi.mocked(clearEventCache).mockImplementation(() => undefined)
+
+    await renderPage()
+
+    await waitFor(() => {
+      expect(screen.getByText('งานวิ่ง Alpha')).toBeInTheDocument()
+    })
+
+    fireEvent.click(screen.getByLabelText('ลบ งานวิ่ง Alpha'))
+
+    await waitFor(() => {
+      expect(screen.getByText('ยืนยันลบ')).toBeInTheDocument()
+    })
+
+    fireEvent.click(screen.getByText('ยืนยันลบ'))
+
+    await waitFor(() => {
+      expect(screen.getByText('ลบไม่ได้ กรุณาลองใหม่')).toBeInTheDocument()
+    })
+
+    // Event is still in the list
+    expect(screen.getByText('งานวิ่ง Alpha')).toBeInTheDocument()
+  })
 })

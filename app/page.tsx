@@ -18,6 +18,8 @@ export default function HomePage() {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [deleteStats, setDeleteStats] = useState<{ recordCount: number; athleteCount: number } | null>(null)
   const [statsLoading, setStatsLoading] = useState(false)
+  const [statsError, setStatsError] = useState(false)
+  const [deleteError, setDeleteError] = useState(false)
 
   const loadEvents = useCallback(async () => {
     setListLoading(true)
@@ -41,10 +43,14 @@ export default function HomePage() {
     setConfirmDeleteId(id)
     setStatsLoading(true)
     setDeleteStats(null)
+    setStatsError(false)
     try {
       const { getEventStats } = await import('@/lib/db')
       const stats = await getEventStats(id)
       setDeleteStats(stats)
+    } catch {
+      setStatsError(true)
+      setStatsLoading(false)
     } finally {
       setStatsLoading(false)
     }
@@ -53,15 +59,17 @@ export default function HomePage() {
   async function handleDeleteConfirm() {
     if (!confirmDeleteId) return
     const id = confirmDeleteId
+    setDeleteError(false)
     try {
       const { deleteEvent } = await import('@/lib/db')
       const { clearEventCache } = await import('@/lib/storage')
       await deleteEvent(id)
       clearEventCache(id)
       setEvents((prev) => prev.filter((e) => e.id !== id))
-    } finally {
       setConfirmDeleteId(null)
       setDeleteStats(null)
+    } catch {
+      setDeleteError(true)
     }
   }
 
@@ -76,11 +84,9 @@ export default function HomePage() {
   }
 
   async function handleEditSaved() {
-    const { getEvents } = await import('@/lib/db')
-    const data = await getEvents()
-    setEvents(data)
     setMode('list')
     setEditingEvent(null)
+    await loadEvents()
   }
 
   function handleEditCancel() {
@@ -175,8 +181,21 @@ export default function HomePage() {
                       <div className="mt-1 rounded-xl bg-red-50 border border-red-100 px-4 py-3">
                         {statsLoading ? (
                           <p className="text-sm text-gray-400">กำลังโหลด...</p>
+                        ) : !statsLoading && !deleteStats && statsError ? (
+                          <>
+                            <p className="text-sm text-red-700 mb-3">โหลดข้อมูลไม่ได้</p>
+                            <button
+                              onClick={handleDeleteCancel}
+                              className="flex-1 border border-gray-200 rounded-lg py-2 text-sm text-gray-600"
+                            >
+                              ยกเลิก
+                            </button>
+                          </>
                         ) : deleteStats ? (
                           <>
+                            {deleteError && (
+                              <p className="text-sm text-red-600 mb-2">ลบไม่ได้ กรุณาลองใหม่</p>
+                            )}
                             <p className="text-sm text-red-700 mb-3">
                               ลบงาน &apos;{event.name}&apos;? จะลบ {deleteStats.recordCount} บิบ และ {deleteStats.athleteCount} นักกีฬา ไม่สามารถกู้คืนได้
                             </p>
