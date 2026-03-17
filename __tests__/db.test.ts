@@ -22,10 +22,10 @@ beforeEach(() => vi.clearAllMocks())
 
 describe('createEvent', () => {
   it('inserts event and returns data', async () => {
-    const mockEvent = { id: 'evt-1', name: 'Test', start_time: '2026-03-16T07:00:00+07:00', timezone: 'Asia/Bangkok', overall_lockout: false }
+    const mockEvent = { id: 'evt-1', name: 'Test', timezone: 'Asia/Bangkok', overall_lockout: false }
     const chain = mockChain({ data: mockEvent, error: null })
     vi.mocked(supabase.from).mockReturnValue(chain as unknown as ReturnType<typeof supabase.from>)
-    const result = await createEvent({ name: 'Test', start_time: '2026-03-16T07:00:00+07:00', timezone: 'Asia/Bangkok', overall_lockout: false })
+    const result = await createEvent({ name: 'Test', timezone: 'Asia/Bangkok', overall_lockout: false })
     expect(result).toEqual(mockEvent)
   })
 })

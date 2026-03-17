@@ -28,7 +28,6 @@ export default function EventSetupForm({ onCreated }: Props) {
 
       const event = await createEvent({
         name,
-        start_time: startTime,
         timezone: 'Asia/Bangkok',
         overall_lockout: false,
       })

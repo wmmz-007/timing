@@ -6,8 +6,8 @@ CREATE TABLE event_distances (
   event_id       uuid NOT NULL REFERENCES events(id) ON DELETE CASCADE,
   name           text NOT NULL,
   start_time     timestamptz NOT NULL,
-  overall_top_n  int NOT NULL DEFAULT 3,
-  default_top_n  int NOT NULL DEFAULT 3
+  overall_top_n  int NOT NULL DEFAULT 3 CHECK (overall_top_n > 0),
+  default_top_n  int NOT NULL DEFAULT 3 CHECK (default_top_n > 0)
 );
 CREATE INDEX ON event_distances(event_id);
 
@@ -35,7 +35,7 @@ CREATE TABLE subgroup_prize_overrides (
   distance_id  uuid NOT NULL REFERENCES event_distances(id) ON DELETE CASCADE,
   gender       text NOT NULL,
   age_group    text NOT NULL,
-  top_n        int NOT NULL,
+  top_n        int NOT NULL CHECK (top_n > 0),
   UNIQUE (distance_id, gender, age_group)
 );
 
