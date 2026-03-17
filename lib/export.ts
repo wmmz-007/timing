@@ -13,8 +13,8 @@ export function generateCsv(
   const distanceById = new Map(distances.map((d) => [d.id, d]))
 
   const sorted = [...records].sort((a, b) => {
-    const startA = getDistanceStartTime(a.bib_number, athletes, distances) ?? distances[0]?.start_time ?? ''
-    const startB = getDistanceStartTime(b.bib_number, athletes, distances) ?? distances[0]?.start_time ?? ''
+    const startA = getDistanceStartTime(a.bib_number, athletes, distances) ?? ''
+    const startB = getDistanceStartTime(b.bib_number, athletes, distances) ?? ''
     return calcNetTime(startA, a.finish_time) - calcNetTime(startB, b.finish_time)
   })
 

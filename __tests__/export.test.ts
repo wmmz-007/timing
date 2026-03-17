@@ -73,4 +73,19 @@ describe('generateCsv', () => {
     expect(parts[7]).toBe('')
     expect(parts[8]).toBe('')
   })
+
+  it('returns header only when records is empty', () => {
+    const rankMap = computeRanks([], athletes, [dist], overrides, false)
+    const csv = generateCsv([], event, athletes, [dist], rankMap)
+    const lines = csv.split('\n').filter(Boolean)
+    expect(lines).toHaveLength(1)
+    expect(lines[0]).toContain('bib')
+  })
+
+  it('outputs empty string not null for missing ranks', () => {
+    // Pass an empty rankMap so all bibs have no rank entry
+    const csv = generateCsv(records, event, athletes, [dist], new Map())
+    expect(csv).not.toContain(',null,')
+    expect(csv).not.toContain(',undefined,')
+  })
 })
