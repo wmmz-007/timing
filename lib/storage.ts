@@ -41,6 +41,16 @@ export function removeSynced(eventId: string): void {
   setPendingRecords(eventId, records)
 }
 
+export function removePendingRecord(eventId: string, localId: string): void {
+  const records = getPendingRecords(eventId).filter((r) => r.local_id !== localId)
+  setPendingRecords(eventId, records)
+}
+
+export function removeRecordByBib(eventId: string, bib: string): void {
+  const records = getPendingRecords(eventId).filter((r) => r.bib_number !== bib)
+  setPendingRecords(eventId, records)
+}
+
 export function saveEvent(event: Event): void {
   localStorage.setItem(eventKey(event.id), JSON.stringify(event))
 }

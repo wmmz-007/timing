@@ -12,7 +12,7 @@ interface Props {
   timezone: string
   onUndo: (localId: string) => void
   onOverwrite: (bib: string) => void
-  onSkip: () => void
+  onSkip: (toastId: string) => void
   onDismiss: (toastId: string) => void
 }
 
@@ -46,7 +46,7 @@ function DuplicateToast({ toast, timezone, onOverwrite, onSkip }: {
   toast: Extract<Toast, { type: 'duplicate' }>
   timezone: string
   onOverwrite: (bib: string) => void
-  onSkip: () => void
+  onSkip: (toastId: string) => void
 }) {
   return (
     <div className="bg-yellow-50 border border-yellow-200 rounded-2xl px-4 py-3 shadow-lg">
@@ -61,7 +61,7 @@ function DuplicateToast({ toast, timezone, onOverwrite, onSkip }: {
           อ่านใหม่
         </button>
         <button
-          onClick={onSkip}
+          onClick={() => onSkip(toast.toastId)}
           className="flex-1 py-2 rounded-xl bg-yellow-100 text-yellow-800 text-xs font-medium"
         >
           ข้าม

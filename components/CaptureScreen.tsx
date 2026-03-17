@@ -8,7 +8,7 @@ import CaptureToast, { type Toast } from './CaptureToast'
 import type { Event, PendingRecord } from '@/types'
 import type { SpeechResult } from '@/lib/speech'
 import { startSpeechRecognition } from '@/lib/speech'
-import { addPendingRecord, getPendingRecords } from '@/lib/storage'
+import { addPendingRecord, getPendingRecords, removePendingRecord, removeRecordByBib } from '@/lib/storage'
 import { syncPendingRecords } from '@/lib/sync'
 import { formatTime } from '@/lib/time'
 
@@ -50,8 +50,7 @@ export default function CaptureScreen({ event }: Props) {
 
   function saveRecord(bib: string, capturedAt: string, force = false): string {
     if (force) {
-      const existing = getPendingRecords(event.id).filter((r) => r.bib_number !== bib)
-      localStorage.setItem(`timing:pending:${event.id}`, JSON.stringify(existing))
+      removeRecordByBib(event.id, bib)
     }
     const localId = uuidv4()
     addPendingRecord({ local_id: localId, event_id: event.id, bib_number: bib, finish_time: capturedAt, synced: false })
@@ -119,8 +118,7 @@ export default function CaptureScreen({ event }: Props) {
   }
 
   function handleUndo(localId: string) {
-    const updated = getPendingRecords(event.id).filter((r) => r.local_id !== localId)
-    localStorage.setItem(`timing:pending:${event.id}`, JSON.stringify(updated))
+    removePendingRecord(event.id, localId)
     refreshRecords()
     setToasts((prev) => prev.filter((t) => t.type !== 'saved' || t.localId !== localId))
   }
@@ -156,12 +154,12 @@ export default function CaptureScreen({ event }: Props) {
     }
   }
 
-  function handleSkip() {
+  function handleSkip(toastId: string) {
     setPaused(false)
     pausedRef.current = false
     setOverwriteBib(null)
     overwriteBibRef.current = null
-    setToasts((prev) => prev.filter((t) => t.type !== 'duplicate'))
+    setToasts((prev) => prev.filter((t) => t.toastId !== toastId))
     if (listeningRef.current) runLoop()
   }
 
