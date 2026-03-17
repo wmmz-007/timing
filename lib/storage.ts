@@ -11,7 +11,11 @@ function eventKey(eventId: string): string {
 export function getPendingRecords(eventId: string): PendingRecord[] {
   const raw = localStorage.getItem(pendingKey(eventId))
   if (!raw) return []
-  return JSON.parse(raw) as PendingRecord[]
+  try {
+    return JSON.parse(raw) as PendingRecord[]
+  } catch {
+    return []
+  }
 }
 
 function setPendingRecords(eventId: string, records: PendingRecord[]): void {
@@ -44,5 +48,9 @@ export function saveEvent(event: Event): void {
 export function getEventById(eventId: string): Event | null {
   const raw = localStorage.getItem(eventKey(eventId))
   if (!raw) return null
-  return JSON.parse(raw) as Event
+  try {
+    return JSON.parse(raw) as Event
+  } catch {
+    return null
+  }
 }

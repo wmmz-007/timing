@@ -15,7 +15,9 @@ global.localStorage = {
       delete store[key]
     }
   },
-  length: 0,
+  get length(): number {
+    return Object.keys(store).length
+  },
   key: (index: number) => {
     const keys = Object.keys(store)
     return keys[index] || null
