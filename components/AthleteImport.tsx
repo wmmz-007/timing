@@ -98,7 +98,7 @@ export default function AthleteImport({ eventId, distances, disabled, onImported
       const updated = await getAthletesForEvent(eventId)
       saveAthletes(eventId, updated)
       onImported(updated)
-      setSummary(`นำเข้า ${unique.length} คน, ข้าม ${allRows.length - unique.length + skipped - (athletes.length - unique.length)} แถว`)
+      setSummary(`นำเข้า ${unique.length} คน, ข้าม ${allRows.length - unique.length} แถว`)
       setHeaders([]); setPreview([]); setAllRows([])
     } catch (err) {
       setError('นำเข้าไม่สำเร็จ กรุณาลองใหม่')
@@ -109,6 +109,7 @@ export default function AthleteImport({ eventId, distances, disabled, onImported
   }
 
   const canImport = !!colMap.bib_number && !!colMap.distance && !hasPlaceholder
+  const unmatched = unmatchedDistances()
 
   return (
     <div className="space-y-4">
@@ -142,6 +143,7 @@ export default function AthleteImport({ eventId, distances, disabled, onImported
               <select
                 value={colMap[field]}
                 onChange={(e) => setColMap((prev) => ({ ...prev, [field]: e.target.value }))}
+                disabled={disabled}
                 className="flex-1 border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-black"
               >
                 <option value="">— ไม่ใช้ —</option>
@@ -151,9 +153,9 @@ export default function AthleteImport({ eventId, distances, disabled, onImported
           ))}
 
           {/* Unmatched distances warning */}
-          {unmatchedDistances().length > 0 && (
+          {unmatched.length > 0 && (
             <p className="text-xs text-amber-700">
-              ระยะที่ไม่ตรง: {unmatchedDistances().join(', ')} — แถวเหล่านี้จะถูกข้าม
+              ระยะที่ไม่ตรง: {unmatched.join(', ')} — แถวเหล่านี้จะถูกข้าม
             </p>
           )}
 
@@ -165,7 +167,7 @@ export default function AthleteImport({ eventId, distances, disabled, onImported
               </thead>
               <tbody>
                 {preview.map((row, i) => (
-                  <tr key={i} className={unmatchedDistances().includes((row[colMap.distance] ?? '').toLowerCase()) ? 'bg-amber-50' : ''}>
+                  <tr key={i} className={unmatched.includes((row[colMap.distance] ?? '').toLowerCase()) ? 'bg-amber-50' : ''}>
                     {headers.map((h) => <td key={h} className="px-2 py-1 border-b border-gray-50">{row[h]}</td>)}
                   </tr>
                 ))}
@@ -176,7 +178,7 @@ export default function AthleteImport({ eventId, distances, disabled, onImported
           <button
             type="button"
             onClick={handleImport}
-            disabled={!canImport || loading}
+            disabled={!canImport || loading || !!disabled}
             className="w-full bg-black text-white rounded-xl py-3 text-sm font-medium disabled:opacity-40"
           >
             {loading ? 'กำลังนำเข้า...' : 'ยืนยันนำเข้า'}

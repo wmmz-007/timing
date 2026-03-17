@@ -165,7 +165,7 @@ export default function SettingsPage() {
       <div className="border border-gray-100 rounded-2xl mb-3 overflow-hidden">
         <button
           className="w-full flex items-center justify-between px-5 py-4 text-left"
-          onClick={() => setOpenSection(2)}
+          onClick={() => setOpenSection(openSection === 2 ? 0 : 2)}
         >
           <span className="font-medium">นักกีฬา</span>
           {openSection === 2 ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
