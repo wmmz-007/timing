@@ -87,8 +87,8 @@ export default function SettingsPage() {
     if (offline) return
     const count = athletes.filter((a) => a.distance_id === distId).length
     const msg = count > 0
-      ? `ระยะนี้มีนักกีฬา ${count} คน — ลบแล้วนักกีฬาเหล่านี้จะถูกลบด้วย ยืนยันไหม?`
-      : 'ลบระยะนี้?'
+      ? `This distance has ${count} athlete(s) — they will also be deleted. Confirm?`
+      : 'Delete this distance?'
     if (!confirm(msg)) return
     const { deleteDistanceAndAthletes, getDistancesForEvent, getAthletesForEvent } = await import('@/lib/db')
     const { saveDistances, saveAthletes } = await import('@/lib/storage')
@@ -129,7 +129,7 @@ export default function SettingsPage() {
 
         {openSection === 1 && (
           <div className="px-5 pb-5 space-y-3">
-            {distances.some((d) => d.name === 'ทั้งหมด') && (
+            {distances.some((d) => d.name === '') && (
               <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-xs text-amber-800">
                 Name all distances before importing athletes
               </div>
