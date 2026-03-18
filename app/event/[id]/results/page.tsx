@@ -96,12 +96,12 @@ export default function ResultsPage() {
   }, [id])
 
   if (!event) {
-    return <div className="min-h-screen flex items-center justify-center"><p className="text-gray-400">กำลังโหลด...</p></div>
+    return <div className="min-h-screen flex items-center justify-center"><p className="text-gray-400">Loading...</p></div>
   }
 
   return (
     <main className="px-6 pt-8 pb-6 max-w-sm mx-auto">
-      <h1 className="text-2xl font-semibold tracking-tight mb-1">ผลการแข่งขัน</h1>
+      <h1 className="text-2xl font-semibold tracking-tight mb-1">Results</h1>
       <p className="text-sm text-gray-400 mb-6">{event.name}</p>
       <ConflictsPanel conflicts={conflicts} timezone={event.timezone} />
       <div className="mt-4">

@@ -101,19 +101,19 @@ export default function SettingsPage() {
   if (!event) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-400">กำลังโหลด...</p>
+        <p className="text-gray-400">Loading...</p>
       </div>
     )
   }
 
   return (
     <main className="px-6 pt-8 pb-6 max-w-sm mx-auto">
-      <h1 className="text-2xl font-semibold tracking-tight mb-1">ตั้งค่า</h1>
+      <h1 className="text-2xl font-semibold tracking-tight mb-1">Settings</h1>
       <p className="text-sm text-gray-400 mb-6">{event.name}</p>
 
       {offline && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-3 mb-4 text-sm text-yellow-800">
-          ไม่มีการเชื่อมต่อ — แก้ไขได้เมื่อออนไลน์
+          Offline — edits available when online
         </div>
       )}
 
@@ -123,7 +123,7 @@ export default function SettingsPage() {
           className="w-full flex items-center justify-between px-5 py-4 text-left"
           onClick={() => setOpenSection(openSection === 1 ? 0 : 1)}
         >
-          <span className="font-medium">ระยะและเวลาปล่อยตัว</span>
+          <span className="font-medium">Distances &amp; Start Times</span>
           {openSection === 1 ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
         </button>
 
@@ -131,7 +131,7 @@ export default function SettingsPage() {
           <div className="px-5 pb-5 space-y-3">
             {distances.some((d) => d.name === 'ทั้งหมด') && (
               <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-xs text-amber-800">
-                กรุณาตั้งชื่อระยะก่อน import นักกีฬา
+                Name all distances before importing athletes
               </div>
             )}
             {distances.map((dist) => (
@@ -168,7 +168,7 @@ export default function SettingsPage() {
           className="w-full flex items-center justify-between px-5 py-4 text-left"
           onClick={() => setOpenSection(openSection === 2 ? 0 : 2)}
         >
-          <span className="font-medium">นักกีฬา</span>
+          <span className="font-medium">Athletes</span>
           {openSection === 2 ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
         </button>
         {openSection === 2 && (
@@ -188,7 +188,7 @@ export default function SettingsPage() {
           className="w-full flex items-center justify-between px-5 py-4 text-left"
           onClick={() => setOpenSection(openSection === 3 ? 0 : 3)}
         >
-          <span className="font-medium">รางวัล</span>
+          <span className="font-medium">Prizes</span>
           {openSection === 3 ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
         </button>
         {openSection === 3 && event && (

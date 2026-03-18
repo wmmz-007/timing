@@ -12,7 +12,7 @@ export default async function EventHubPage({ params }: Props) {
     <main className="min-h-screen flex flex-col items-center justify-center px-6">
       <div className="w-full max-w-sm space-y-4">
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight">ควบคุมงาน</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Event Control</h1>
         </div>
 
         <Link
@@ -20,8 +20,7 @@ export default async function EventHubPage({ params }: Props) {
           className="flex items-center justify-between w-full bg-black text-white rounded-2xl px-6 py-5"
         >
           <div>
-            <p className="text-base font-medium">บันทึกเวลา</p>
-            <p className="text-xs text-gray-400 mt-0.5">Race Capture</p>
+            <p className="text-base font-medium">Race Timing Record</p>
           </div>
           <Mic size={22} strokeWidth={1.75} />
         </Link>
@@ -31,8 +30,8 @@ export default async function EventHubPage({ params }: Props) {
           className="flex items-center justify-between w-full bg-gray-50 text-gray-900 rounded-2xl px-6 py-5 border border-gray-100"
         >
           <div>
-            <p className="text-base font-medium">ผลการแข่งขัน</p>
-            <p className="text-xs text-gray-400 mt-0.5">Live Results</p>
+            <p className="text-base font-medium">Results</p>
+            <p className="text-xs text-gray-400 mt-0.5">Live</p>
           </div>
           <BarChart2 size={22} strokeWidth={1.75} className="text-gray-500" />
         </Link>
@@ -42,7 +41,7 @@ export default async function EventHubPage({ params }: Props) {
           className="flex items-center justify-between w-full bg-gray-50 text-gray-900 rounded-2xl px-6 py-5 border border-gray-100"
         >
           <div>
-            <p className="text-base font-medium">ส่งออก CSV</p>
+            <p className="text-base font-medium">Export CSV</p>
             <p className="text-xs text-gray-400 mt-0.5">Export</p>
           </div>
           <Download size={22} strokeWidth={1.75} className="text-gray-500" />
@@ -53,8 +52,7 @@ export default async function EventHubPage({ params }: Props) {
           className="flex items-center justify-between w-full bg-gray-50 text-gray-900 rounded-2xl px-6 py-5 border border-gray-100"
         >
           <div>
-            <p className="text-base font-medium">ตั้งค่า</p>
-            <p className="text-xs text-gray-400 mt-0.5">Settings</p>
+            <p className="text-base font-medium">Settings</p>
           </div>
           <Settings size={22} strokeWidth={1.75} className="text-gray-500" />
         </Link>

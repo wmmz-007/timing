@@ -62,17 +62,17 @@ export default function ExportPage() {
   }
 
   if (!event) {
-    return <div className="min-h-screen flex items-center justify-center"><p className="text-gray-400">กำลังโหลด...</p></div>
+    return <div className="min-h-screen flex items-center justify-center"><p className="text-gray-400">Loading...</p></div>
   }
 
   return (
     <main className="px-6 pt-8 pb-6 max-w-sm mx-auto">
-      <h1 className="text-2xl font-semibold tracking-tight mb-1">ส่งออก CSV</h1>
+      <h1 className="text-2xl font-semibold tracking-tight mb-1">Export CSV</h1>
       <p className="text-sm text-gray-400 mb-6">{event.name}</p>
 
       <div className="bg-gray-50 rounded-2xl p-4 mb-6 text-sm space-y-1">
-        <p className="text-gray-500">จำนวนบันทึก: <span className="font-semibold text-gray-900">{records.length} คน</span></p>
-        <p className="text-gray-500">จำนวนนักกีฬา: <span className="font-semibold text-gray-900">{athletes.length} คน</span></p>
+        <p className="text-gray-500">Records: <span className="font-semibold text-gray-900">{records.length}</span></p>
+        <p className="text-gray-500">Athletes: <span className="font-semibold text-gray-900">{athletes.length}</span></p>
         {distances.map((d) => (
           <p key={d.id} className="text-gray-500">
             {d.name}: <span className="font-mono font-semibold text-gray-900">
@@ -87,11 +87,11 @@ export default function ExportPage() {
         disabled={records.length === 0}
         className="w-full bg-black text-white rounded-xl py-4 text-base font-medium disabled:opacity-40 flex items-center justify-center gap-2"
       >
-        <Download size={18} /> ดาวน์โหลด CSV
+        <Download size={18} /> Download CSV
       </button>
 
       <p className="mt-4 text-xs text-gray-400 text-center">
-        คอลัมน์: bib, name, distance, gender, age_group, finish_time, net_time, overall_rank, division_rank
+        Columns: bib, name, distance, gender, age_group, finish_time, net_time, overall_rank, division_rank
       </p>
     </main>
   )

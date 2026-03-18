@@ -72,7 +72,7 @@ export default function CapturePage() {
   if (!event) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-400">กำลังโหลด...</p>
+        <p className="text-gray-400">Loading...</p>
       </div>
     )
   }
