@@ -17,6 +17,9 @@ export default function SettingsPage() {
   const [overrides, setOverrides] = useState<SubgroupPrizeOverride[]>([])
   const [offline, setOffline] = useState(false)
   const [openSection, setOpenSection] = useState<0 | 1 | 2 | 3>(1)
+  const [pwEditing, setPwEditing] = useState(false)
+  const [pwInput, setPwInput] = useState('')
+  const [pwError, setPwError] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -96,6 +99,21 @@ export default function SettingsPage() {
     const [dists, aths] = await Promise.all([getDistancesForEvent(id), getAthletesForEvent(id)])
     setDistances(dists); setAthletes(aths)
     saveDistances(id, dists); saveAthletes(id, aths)
+  }
+
+  async function handleSavePassword() {
+    const trimmed = pwInput.trim()
+    if (!trimmed) { setPwError('Password cannot be empty'); return }
+    if (trimmed.length < 4) { setPwError('Password must be at least 4 characters'); return }
+    try {
+      const { updateEventPassword } = await import('@/lib/db')
+      await updateEventPassword(id, trimmed)
+      setEvent(prev => prev ? { ...prev, password: trimmed } : prev)
+      setPwEditing(false)
+      setPwError(null)
+    } catch {
+      setPwError('Failed to save. Try again.')
+    }
   }
 
   if (!event) {
@@ -204,6 +222,52 @@ export default function SettingsPage() {
             />
           </div>
         )}
+      </div>
+
+      {/* Access Password — always visible */}
+      <div className="border border-gray-100 rounded-2xl mt-3 overflow-hidden">
+        <div className="px-5 py-4">
+          <p className="font-medium mb-3">Access Password</p>
+          {pwEditing ? (
+            <div className="space-y-2">
+              <input
+                type="text"
+                value={pwInput}
+                onChange={e => { setPwInput(e.target.value); setPwError(null) }}
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-black"
+                autoFocus
+              />
+              {pwError && <p className="text-red-500 text-sm">{pwError}</p>}
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleSavePassword}
+                  className="flex-1 bg-black text-white rounded-xl py-2.5 text-sm font-medium"
+                >
+                  Save
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setPwEditing(false); setPwError(null) }}
+                  className="flex-1 border border-gray-200 rounded-xl py-2.5 text-sm"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-sm">{event.password}</span>
+              <button
+                type="button"
+                onClick={() => { setPwInput(event.password ?? ''); setPwEditing(true) }}
+                className="text-sm text-gray-500 underline"
+              >
+                Change
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </main>
   )
