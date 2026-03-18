@@ -15,15 +15,45 @@ Also applies pending Supabase migrations (002, 003, 004) to production.
 
 ## 1. Database Migration (`004_add_event_password.sql`)
 
-Add `password` column to `events` table:
+Migration 004 does two things in one file:
 
+**Step 1** — Add `password` column:
 ```sql
 ALTER TABLE events ADD COLUMN password TEXT NOT NULL DEFAULT '';
 ```
 
-Events with `password = ''` cannot be used to log in — password must be set at creation time.
+**Step 2** — Redefine the `create_event_with_distances` RPC to accept `p_password`:
+```sql
+CREATE OR REPLACE FUNCTION create_event_with_distances(
+  p_name      text,
+  p_timezone  text,
+  p_password  text,
+  p_distances jsonb
+) RETURNS events AS $$
+DECLARE
+  v_event events;
+BEGIN
+  INSERT INTO events (name, timezone, overall_lockout, password)
+  VALUES (p_name, p_timezone, false, p_password)
+  RETURNING * INTO v_event;
 
-**Production Supabase:** Migrations 002, 003, and 004 must be applied manually in the Supabase SQL Editor. The plan will include the SQL to run.
+  INSERT INTO event_distances (event_id, name, start_time, overall_top_n, default_top_n)
+  SELECT
+    v_event.id,
+    d->>'name',
+    (d->>'start_time')::timestamptz,
+    COALESCE((d->>'overall_top_n')::int, 3),
+    COALESCE((d->>'default_top_n')::int, 3)
+  FROM jsonb_array_elements(p_distances) d;
+
+  RETURN v_event;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+Events with `password = ''` (or whitespace-only) cannot be used to log in.
+
+**Production Supabase:** Migrations 002, 003, and 004 must be applied manually in the Supabase SQL Editor. The plan will include the exact SQL to run for each migration.
 
 ---
 
@@ -34,10 +64,12 @@ Replace global PIN logic with event password lookup.
 **Behaviour:**
 - On mount (`useEffect`): if `sessionStorage.getItem('authed') === '1'` → `router.replace('/events')`
 - Render: app name ("Timing"), Timer icon, password input (`type="password"`, label "Event Password", `autoFocus`)
-- On submit with empty input: show "Enter password"
-- On submit with non-empty input: call `getEventByPassword(input)`
+- On submit: trim input first
+- If trimmed input is empty: show "Enter password"
+- If trimmed input is non-empty: call `getEventByPassword(trimmedInput)`
   - If match found: `sessionStorage.setItem('authed', '1')` → `router.push('/event/${event.id}')`
-  - If no match (or event has `password = ''`): show "Incorrect password"
+  - If no match (returns null): show "Incorrect password"
+  - If throws (network error): show "Something went wrong. Try again."
 - Remove all `NEXT_PUBLIC_APP_PIN` references
 
 ---
@@ -46,9 +78,12 @@ Replace global PIN logic with event password lookup.
 
 Add required "Event Password" field.
 
-- Field: label "Event Password", `type="text"`, required, no default
-- Validation: empty → inline error "Enter a password"
-- Pass `password` to `createEventWithDistances`
+- Field: label "Event Password", `type="text"` (plaintext so admin can see and copy it), required, no default
+- Note: `type="text"` is intentional — admin needs to see the password clearly to share it with team members
+- Validation: trim value; if empty/whitespace → inline error "Enter a password"; minimum 4 characters → inline error "Password must be at least 4 characters"
+- Pass `password` (trimmed) to `createEventWithDistances` as 4th positional argument (see db.ts below)
+
+**Existing call signature change:** `createEventWithDistances(name, timezone, distances[])` → `createEventWithDistances(name, timezone, password, distances[])`. All call sites (currently only `EventSetupForm.tsx`) must be updated.
 
 ---
 
@@ -56,10 +91,11 @@ Add required "Event Password" field.
 
 Add new section "Access Password" at the bottom of the settings page.
 
-- Display current password (plain text, so admin can read and share it)
-- "Change" button → inline edit field → "Save" / "Cancel"
-- On save: call `updateEventPassword(id, newPassword)`
-- Validation: empty → inline error "Password cannot be empty"
+- This section is **always visible** (not an accordion) — do not extend the `openSection` type or add accordion controls
+- Display current password (plain text, so admin can read and share it with team members)
+- "Change" button → inline edit field (pre-filled with current password) → "Save" / "Cancel"
+- On save: trim value; if empty/whitespace → inline error "Password cannot be empty"; if less than 4 characters → inline error "Password must be at least 4 characters"; else call `updateEventPassword(id, trimmedValue)`
+- "Cancel" discards changes without saving
 
 ---
 
@@ -70,23 +106,30 @@ Add `password: string` to `Event` interface.
 
 ### `lib/db.ts`
 
-**New function:**
+**Updated function** (add `password` as 4th positional param):
 ```ts
-getEventByPassword(password: string): Promise<Event | null>
-// SELECT * FROM events WHERE password = input AND password != '' LIMIT 1
-// Returns null if not found
+export async function createEventWithDistances(
+  name: string,
+  timezone: string,
+  password: string,
+  distances: { name: string; start_time: string; overall_top_n?: number; default_top_n?: number }[]
+): Promise<Event>
+// Calls RPC create_event_with_distances with p_password added
 ```
 
-**Updated function:**
+**New function:**
 ```ts
-createEventWithDistances(params: { name, timezone, password, distances[] }): Promise<Event>
-// Include password in the events insert via the RPC or direct insert
+export async function getEventByPassword(password: string): Promise<Event | null>
+// Trims password; if empty → return null immediately (no DB call)
+// Use Supabase client: .from('events').select('*').eq('password', trimmed).neq('password', '').limit(1).maybeSingle()
+// Returns null if not found; throws on network/DB error
 ```
 
 **New function:**
 ```ts
-updateEventPassword(id: string, password: string): Promise<void>
+export async function updateEventPassword(id: string, password: string): Promise<void>
 // UPDATE events SET password = $password WHERE id = $id
+// Caller is responsible for validation (trim, min length) before calling
 ```
 
 ---
@@ -102,7 +145,7 @@ updateEventPassword(id: string, password: string): Promise<void>
 
 - Unchanged: `sessionStorage` key `authed = '1'`
 - Session expires when browser tab is closed
-- Any valid event password sets the same `authed` flag → user can navigate to `/events` list
+- **Intentional design:** Any valid event password sets the same `authed` flag → user can navigate to `/events` list and access any event from there. This is a deliberate choice for an internal admin tool — once authenticated with any event password, the user is trusted.
 
 ---
 
@@ -132,19 +175,21 @@ Mock `sessionStorage` via `vi.stubGlobal`.
 2. Shows "Incorrect password" when `getEventByPassword` returns null
 3. Sets `sessionStorage.authed = '1'` and calls `router.push('/event/e1')` on correct password (`getEventByPassword` returns event with id `'e1'`)
 4. Shows "Enter password" when submitted with empty input
-5. Does not call `getEventByPassword` when input is empty
+5. Does not call `getEventByPassword` when input is empty (or whitespace-only)
 
 ### `__tests__/event-setup-form.test.tsx` (update)
 
 1. Shows "Enter a password" error when password field is empty on submit
-2. Calls `createEventWithDistances` with `password` field included
+2. Shows "Password must be at least 4 characters" when password is fewer than 4 characters
+3. Calls `createEventWithDistances` with `password` as 4th argument when form is valid
 
-### `__tests__/settings-page.test.tsx` (update or new)
+### `__tests__/settings-page.test.tsx` (create)
 
-Mock `@/lib/db` → include `updateEventPassword`.
+Mock `@/lib/db` → include `getEvent`, `getDistancesForEvent`, `updateEventPassword`.
 
-1. Displays current event password in Access Password section
-2. "Change" button shows inline edit field
-3. "Save" calls `updateEventPassword` with new value
-4. Empty password shows "Password cannot be empty" error
-5. "Cancel" dismisses edit without saving
+1. Displays current event password in "Access Password" section
+2. "Change" button shows inline edit field pre-filled with current password
+3. "Save" calls `updateEventPassword` with trimmed new value
+4. Empty/whitespace password shows "Password cannot be empty" error
+5. Password shorter than 4 characters shows "Password must be at least 4 characters" error
+6. "Cancel" dismisses edit without calling `updateEventPassword`
