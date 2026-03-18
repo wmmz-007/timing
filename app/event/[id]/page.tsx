@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Mic, BarChart2, Download, Settings } from 'lucide-react'
+import { Mic, BarChart2, Download, Settings, ChevronLeft } from 'lucide-react'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -9,7 +9,10 @@ export default async function EventHubPage({ params }: Props) {
   const { id } = await params
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center px-6">
+    <main className="relative min-h-screen flex flex-col items-center justify-center px-6">
+      <Link href="/events" aria-label="back" className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-700">
+        <ChevronLeft size={20} />
+      </Link>
       <div className="w-full max-w-sm space-y-4">
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-semibold tracking-tight">Event Control</h1>

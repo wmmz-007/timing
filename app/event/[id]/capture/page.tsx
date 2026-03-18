@@ -1,6 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { ChevronLeft } from 'lucide-react'
 import CaptureScreen from '@/components/CaptureScreen'
 import type { Event, EventDistance, Athlete } from '@/types'
 
@@ -77,5 +79,12 @@ export default function CapturePage() {
     )
   }
 
-  return <CaptureScreen event={event} distances={distances} athletes={athletes} />
+  return (
+    <div className="relative min-h-screen">
+      <Link href={`/event/${id}`} aria-label="back" className="absolute top-4 right-4 z-10 p-2 text-gray-400 hover:text-gray-700">
+        <ChevronLeft size={20} />
+      </Link>
+      <CaptureScreen event={event} distances={distances} athletes={athletes} />
+    </div>
+  )
 }

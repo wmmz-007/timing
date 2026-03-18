@@ -1,7 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ChevronDown, ChevronUp, Trash2, Plus } from 'lucide-react'
+import Link from 'next/link'
+import { ChevronDown, ChevronUp, Trash2, Plus, ChevronLeft } from 'lucide-react'
 import type { Event, EventDistance, Athlete, SubgroupPrizeOverride } from '@/types'
 import DistanceList, { type DistanceRow, rowToStartTime } from '@/components/DistanceList'
 import AthleteImport from '@/components/AthleteImport'
@@ -152,7 +153,10 @@ export default function SettingsPage() {
   }
 
   return (
-    <main className="px-6 pt-8 pb-6 max-w-sm mx-auto">
+    <main className="relative px-6 pt-8 pb-6 max-w-sm mx-auto">
+      <Link href={`/event/${id}`} aria-label="back" className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-700">
+        <ChevronLeft size={20} />
+      </Link>
       <h1 className="text-2xl font-semibold tracking-tight mb-1">Settings</h1>
       <p className="text-sm text-gray-400 mb-6">{event.name}</p>
 

@@ -187,4 +187,12 @@ describe('Settings Page — Access Password', () => {
     expect(screen.getByText('Enter a valid distance')).toBeInTheDocument()
     expect(vi.mocked(db.addDistance)).not.toHaveBeenCalled()
   })
+
+  it('renders back link to /event/evt-1', async () => {
+    await renderPage()
+    await screen.findByText(/settings/i)
+    const links = screen.getAllByRole('link')
+    const backLink = links.find(l => l.getAttribute('href') === '/event/evt-1')
+    expect(backLink).toBeTruthy()
+  })
 })
