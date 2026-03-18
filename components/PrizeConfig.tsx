@@ -88,7 +88,7 @@ export default function PrizeConfig({ event, distances, athletes, overrides, dis
                 defaultValue={dist.overall_top_n}
                 onBlur={(e) => handleDistanceTopN(dist.id, 'overall_top_n', parseInt(e.target.value, 10))}
                 disabled={disabled}
-                className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm"
+                className="mt-1 w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black"
               />
             </div>
             <div className="flex-1">
@@ -98,7 +98,7 @@ export default function PrizeConfig({ event, distances, athletes, overrides, dis
                 defaultValue={dist.default_top_n}
                 onBlur={(e) => handleDistanceTopN(dist.id, 'default_top_n', parseInt(e.target.value, 10))}
                 disabled={disabled}
-                className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm"
+                className="mt-1 w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black"
               />
             </div>
           </div>
@@ -110,7 +110,7 @@ export default function PrizeConfig({ event, distances, athletes, overrides, dis
         <button
           type="button"
           onClick={() => setExpanded(!expanded)}
-          className="text-sm text-gray-500 underline"
+          className="text-sm text-gray-500 hover:text-gray-900"
         >
           {expanded ? 'Hide' : 'Show all'} subgroup
         </button>
@@ -128,7 +128,7 @@ export default function PrizeConfig({ event, distances, athletes, overrides, dis
                     defaultValue={getOverride(dist.id, gender, age_group) ?? ''}
                     onBlur={(e) => handleOverrideChange(dist.id, gender, age_group, e.target.value)}
                     disabled={disabled}
-                    className="w-16 border border-gray-200 rounded-lg px-2 py-1 text-sm text-center"
+                    className="w-16 border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-black"
                   />
                 </div>
               ))
