@@ -73,7 +73,7 @@ describe('createEventWithDistances', () => {
       then: vi.fn((cb: (v: unknown) => unknown) => Promise.resolve(cb({ data: mockEvent, error: null }))),
     }
     const mockRpc = vi.fn(() => rpcChain)
-    vi.mocked(supabase as unknown as { rpc: typeof mockRpc }).rpc = mockRpc
+    ;(supabase as unknown as { rpc: typeof mockRpc }).rpc = mockRpc
     const result = await createEventWithDistances('Test', 'Asia/Bangkok', 'secret', [
       { name: '10K', start_time: '2026-03-17T07:00:00+07:00' },
     ])

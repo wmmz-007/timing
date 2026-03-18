@@ -21,7 +21,7 @@ vi.mock('@/lib/storage', () => ({
 
 vi.mock('@/components/EventSetupForm', () => ({
   default: ({ onCreated }: { onCreated: (e: Event) => void }) => (
-    <button onClick={() => onCreated({ id: 'new-1', name: 'New Event', timezone: 'Asia/Bangkok', overall_lockout: false, created_at: '2026-03-18T00:00:00Z' })}>
+    <button onClick={() => onCreated({ id: 'new-1', name: 'New Event', timezone: 'Asia/Bangkok', overall_lockout: false, created_at: '2026-03-18T00:00:00Z', password: '' })}>
       EventSetupForm
     </button>
   ),
@@ -37,8 +37,8 @@ vi.mock('@/components/EventEditForm', () => ({
   ),
 }))
 
-const mockEvent1: Event = { id: 'e1', name: 'Marathon 2026', timezone: 'Asia/Bangkok', overall_lockout: false, created_at: '2026-03-18T00:00:00Z' }
-const mockEvent2: Event = { id: 'e2', name: '5K Fun Run', timezone: 'Asia/Bangkok', overall_lockout: false, created_at: '2026-03-18T00:00:00Z' }
+const mockEvent1: Event = { id: 'e1', name: 'Marathon 2026', timezone: 'Asia/Bangkok', overall_lockout: false, created_at: '2026-03-18T00:00:00Z', password: '' }
+const mockEvent2: Event = { id: 'e2', name: '5K Fun Run', timezone: 'Asia/Bangkok', overall_lockout: false, created_at: '2026-03-18T00:00:00Z', password: '' }
 
 import { getEvents, getEventStats, deleteEvent } from '@/lib/db'
 import { clearEventCache } from '@/lib/storage'

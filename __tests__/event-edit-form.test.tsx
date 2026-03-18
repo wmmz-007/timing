@@ -30,6 +30,7 @@ const mockEvent: Event = {
   timezone: 'Asia/Bangkok',
   overall_lockout: false,
   created_at: '2026-03-17T00:00:00Z',
+  password: '',
 }
 
 // 2026-03-17T00:00:00Z = 07:00 Bangkok time

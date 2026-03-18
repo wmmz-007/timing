@@ -9,6 +9,7 @@ const event: Event = {
   timezone: 'Asia/Bangkok',
   overall_lockout: false,
   created_at: '2026-03-17T00:00:00Z',
+  password: '',
 }
 
 const dist: EventDistance = {
