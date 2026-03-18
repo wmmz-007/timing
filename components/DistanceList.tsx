@@ -40,7 +40,7 @@ export default function DistanceList({ rows, date, onChange, hideAdd }: Props) {
             placeholder="e.g. 10"
             min="0.01"
             step="any"
-            className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+            className="w-20 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black"
             required
           />
           <span className="text-sm text-gray-500 shrink-0">km</span>

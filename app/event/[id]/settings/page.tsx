@@ -25,6 +25,9 @@ export default function SettingsPage() {
   const [newDistName, setNewDistName] = useState('')
   const [newDistTime, setNewDistTime] = useState('07:00')
   const [addDistError, setAddDistError] = useState<string | null>(null)
+  const [distDirty, setDistDirty] = useState(false)
+  const [distSaving, setDistSaving] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -65,31 +68,36 @@ export default function SettingsPage() {
     })))
   }, [distances, event])
 
-  async function handleDistanceChange(rows: DistanceRow[]) {
-    if (offline || !event) return
+  function handleDistanceRowChange(rows: DistanceRow[]) {
     setDistRows(rows)
-    const { updateDistance } = await import('@/lib/db')
+    setDistDirty(true)
+  }
+
+  async function handleSaveDistances() {
+    if (offline || !event || distSaving) return
+    setDistSaving(true)
+    const { updateDistance, getDistancesForEvent } = await import('@/lib/db')
     const { saveDistances } = await import('@/lib/storage')
     const date = distances[0]
       ? new Date(distances[0].start_time).toISOString().slice(0, 10)
       : new Date().toISOString().slice(0, 10)
-    for (const row of rows) {
+    for (const row of distRows) {
       const existing = distances.find((d) => d.id === row.key)
       if (!existing) continue
       const newName = `${row.name.trim()} km`
       if (existing.name !== newName || !existing.start_time.startsWith(
         new Date(`${date}T${row.time}:00+07:00`).toISOString().slice(0, 16)
       )) {
-        await updateDistance(row.key, {
-          name: newName,
-          start_time: rowToStartTime(date, row.time),
-        })
+        await updateDistance(row.key, { name: newName, start_time: rowToStartTime(date, row.time) })
       }
     }
-    const { getDistancesForEvent } = await import('@/lib/db')
     const updated = await getDistancesForEvent(id)
     setDistances(updated)
     saveDistances(id, updated)
+    setDistDirty(false)
+    setDistSaving(false)
+    setToast('Distance and start time Saved')
+    setTimeout(() => setToast(null), 3000)
   }
 
   async function handleDeleteDistance(distId: string) {
@@ -105,6 +113,7 @@ export default function SettingsPage() {
     const [dists, aths] = await Promise.all([getDistancesForEvent(id), getAthletesForEvent(id)])
     setDistances(dists); setAthletes(aths)
     saveDistances(id, dists); saveAthletes(id, aths)
+    setDistDirty(false)
   }
 
   async function handleSavePassword() {
@@ -135,6 +144,7 @@ export default function SettingsPage() {
       const updated = await getDistancesForEvent(id)
       setDistances(updated)
       saveDistances(id, updated)
+      setDistDirty(false)
       setAddingDist(false)
       setNewDistName('')
       setNewDistTime('07:00')
@@ -190,7 +200,7 @@ export default function SettingsPage() {
                     rows={distRows.filter((r) => r.key === dist.id)}
                     date={new Date(dist.start_time).toISOString().slice(0, 10)}
                     hideAdd
-                    onChange={(rows) => handleDistanceChange(
+                    onChange={(rows) => handleDistanceRowChange(
                       distRows.map((r) => r.key === dist.id ? rows[0] : r)
                     )}
                   />
@@ -207,6 +217,16 @@ export default function SettingsPage() {
                 )}
               </div>
             ))}
+            {distDirty && !addingDist && (
+              <button
+                type="button"
+                onClick={handleSaveDistances}
+                disabled={distSaving}
+                className="w-full bg-black text-white rounded-xl py-2.5 text-sm font-medium mt-1 disabled:opacity-50"
+              >
+                {distSaving ? 'Saving…' : 'Save'}
+              </button>
+            )}
             {addingDist ? (
               <div className="space-y-2 pt-2">
                 <div className="flex gap-2 items-center">
@@ -348,6 +368,11 @@ export default function SettingsPage() {
           )}
         </div>
       </div>
+      {toast && (
+        <div className="fixed top-4 right-4 bg-green-600 text-white rounded-xl px-4 py-2 text-sm shadow-lg z-50">
+          {toast}
+        </div>
+      )}
     </main>
   )
 }
