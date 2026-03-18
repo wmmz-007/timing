@@ -28,19 +28,28 @@ Three components rendered inside the Settings page accordion use inconsistent st
 
 ### `components/PrizeConfig.tsx`
 
-1. All `<input>` elements:
+1. Per-distance top-N `<input>` elements (2 inputs: `overall_top_n`, `default_top_n`):
    - Replace `rounded-lg` with `rounded-xl`
    - Replace `py-1.5` with `py-2.5`
    - Add `focus:outline-none focus:ring-2 focus:ring-black`
 
-2. "Show all / Hide subgroup" `<button>`:
+2. Subgroup override `<input>` (third input, currently `w-16 ... rounded-lg px-2 py-1 text-sm text-center`):
+   - Replace `rounded-lg` with `rounded-xl`
+   - Replace `px-2` with `px-3`
+   - Replace `py-1` with `py-2.5`
+   - Add `focus:outline-none focus:ring-2 focus:ring-black`
+
+3. "Show all / Hide subgroup" `<button>`:
    - Remove `underline` class
    - Replace with `text-sm text-gray-500 hover:text-gray-900`
 
 ### `components/AthleteImport.tsx`
 
-1. Column-mapping `<select>` elements:
+1. Column-mapping `<select>` elements (currently `rounded-lg px-2 py-1.5`):
    - Replace `rounded-lg` with `rounded-xl`
+   - Replace `px-2` with `px-3`
+   - Replace `py-1.5` with `py-2.5`
+   - (focus ring already present — no change needed)
 
 ## Out of Scope
 
@@ -53,5 +62,5 @@ Three components rendered inside the Settings page accordion use inconsistent st
 
 Visual regression — verify in browser that:
 - All inputs in all three sections have matching height and corner radius
-- Focus ring appears consistently on all inputs and selects
+- Focus ring appears on all PrizeConfig inputs (AthleteImport select already has focus ring)
 - "Show subgroup" button no longer has underline decoration
