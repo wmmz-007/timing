@@ -24,7 +24,7 @@ function fillNameAndDate() {
     target: { value: 'Test Marathon' },
   })
   fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-04-01' } })
-  fireEvent.change(screen.getByPlaceholderText('e.g. 10K'), { target: { value: '10K' } })
+  fireEvent.change(screen.getByPlaceholderText('e.g. 10'), { target: { value: '10' } })
 }
 
 describe('EventSetupForm — password field', () => {

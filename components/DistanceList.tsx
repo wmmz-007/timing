@@ -34,13 +34,16 @@ export default function DistanceList({ rows, date, onChange, hideAdd }: Props) {
       {rows.map((row) => (
         <div key={row.key} className="flex gap-2 items-center">
           <input
-            type="text"
+            type="number"
             value={row.name}
             onChange={(e) => update(row.key, 'name', e.target.value)}
-            placeholder="e.g. 10K"
+            placeholder="e.g. 10"
+            min="0.01"
+            step="any"
             className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black"
             required
           />
+          <span className="text-sm text-gray-500 shrink-0">km</span>
           <input
             type="time"
             value={row.time}

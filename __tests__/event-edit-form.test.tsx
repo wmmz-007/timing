@@ -38,7 +38,7 @@ const mockDistances: EventDistance[] = [
   {
     id: 'dist-1',
     event_id: 'evt-1',
-    name: '10K',
+    name: '10',
     start_time: '2026-03-17T00:00:00.000Z',
     overall_top_n: 3,
     default_top_n: 3,
@@ -59,7 +59,7 @@ describe('EventEditForm', () => {
     render(<EventEditForm event={mockEvent} onSaved={vi.fn()} onCancel={vi.fn()} />)
     expect(screen.getByText('Loading...')).toBeInTheDocument()
     await waitFor(() => expect(screen.getByDisplayValue('Test Event')).toBeInTheDocument())
-    expect(screen.getByDisplayValue('10K')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('10')).toBeInTheDocument()
   })
 
   it('calls onCancel when cancel button clicked', async () => {
@@ -106,9 +106,9 @@ describe('EventEditForm', () => {
   it('calls updateDistance for existing distance row', async () => {
     const onSaved = vi.fn()
     render(<EventEditForm event={mockEvent} onSaved={onSaved} onCancel={vi.fn()} />)
-    await waitFor(() => screen.getByDisplayValue('10K'))
+    await waitFor(() => screen.getByDisplayValue('10'))
     fireEvent.click(screen.getByRole('button', { name: /Save/i }))
-    await waitFor(() => expect(updateDistance).toHaveBeenCalledWith('dist-1', expect.objectContaining({ name: '10K' })))
+    await waitFor(() => expect(updateDistance).toHaveBeenCalledWith('dist-1', expect.objectContaining({ name: '10' })))
     expect(onSaved).toHaveBeenCalled()
   })
 
