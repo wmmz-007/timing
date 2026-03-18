@@ -60,6 +60,7 @@ describe('AthleteImport', () => {
     })
 
     it('clicking "Download Template" with distances generates CSV containing distance names', async () => {
+      vi.useFakeTimers()
       render(<AthleteImport eventId="e1" distances={mockDistances} onImported={vi.fn()} />)
       fireEvent.click(screen.getByRole('button', { name: /download template/i }))
       expect(URL.createObjectURL).toHaveBeenCalled()
@@ -70,6 +71,9 @@ describe('AthleteImport', () => {
       expect(text).toMatch(/^bib_number,name,distance,gender,age_group/)
       expect(text).toContain('10K')
       expect(text).toContain('21K')
+      vi.runAllTimers()
+      expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:mock')
+      vi.useRealTimers()
     })
 
     it('clicking "Download Template" with no distances generates header-only CSV', async () => {
