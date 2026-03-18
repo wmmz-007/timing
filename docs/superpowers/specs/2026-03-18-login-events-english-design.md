@@ -10,7 +10,7 @@
 Three changes to the Timing app:
 1. Home page becomes a PIN login page
 2. Events list moves to `/events` with search + add-event modal
-3. All UI text converted from Thai to English; capture page renamed to "Race Timing Record"
+3. All UI text converted from Thai to English; capture page nav link renamed to "Race Timing Record"
 
 ---
 
@@ -18,13 +18,16 @@ Three changes to the Timing app:
 
 Replace the current home page state machine with a login page.
 
+**Must be `'use client'`.** All `sessionStorage` reads must happen inside `useEffect` (not at module scope or during SSR render) to avoid server-side crashes.
+
 **Behaviour:**
-- If `sessionStorage.getItem('authed') === '1'` → redirect to `/events` immediately (no login needed)
-- Render: app name ("Timing"), Timer icon, PIN input (`type="password"`)
+- On mount (`useEffect`): if `sessionStorage.getItem('authed') === '1'` → `router.replace('/events')`
+- Render: app name ("Timing"), Timer icon, PIN input (`type="password"`, `autoFocus`)
 - PIN validated against `process.env.NEXT_PUBLIC_APP_PIN`
 - On correct PIN: `sessionStorage.setItem('authed', '1')` → `router.push('/events')`
 - On incorrect PIN: show inline error "Incorrect PIN"
 - On submit with empty input: show "Enter PIN"
+- If `NEXT_PUBLIC_APP_PIN` is absent or empty string: treat every non-empty submission as incorrect (login is always blocked — deployments must set the env var)
 
 **No accounts, no backend auth call.** PIN is a shared secret in env var.
 
@@ -32,10 +35,12 @@ Replace the current home page state machine with a login page.
 
 ## 2. Events Page (`app/events/page.tsx`) — New
 
-Protected route. State machine: `mode: 'list' | 'edit'`.
+Must be `'use client'`. All `sessionStorage` reads inside `useEffect`.
+
+State machine: `mode: 'list' | 'edit'` plus `showAddModal: boolean`.
 
 **Auth guard:**
-- On mount: if `sessionStorage.getItem('authed') !== '1'` → `router.replace('/')`
+- On mount (`useEffect`): if `sessionStorage.getItem('authed') !== '1'` → `router.replace('/')`
 
 **Logout:**
 - Top-right button: "Logout"
@@ -43,54 +48,56 @@ Protected route. State machine: `mode: 'list' | 'edit'`.
 
 **Search + List:**
 - On mount: fetch all events via `getEvents()`
-- Search input filters events by name (case-insensitive, real-time)
-- Each event row: name (tappable → `/event/[id]`), ✏️ edit button, 🗑️ delete button
-- Delete flow: same as current home page (getEventStats → confirm → deleteEvent + clearEventCache)
-- Loading state, error state with retry button, empty state all present
+- Search input filters events by name (case-insensitive substring match, real-time, no debounce needed)
+- Each event row: name (tappable → `router.push('/event/${id}')`) + ✏️ edit button + 🗑️ delete button
+- Delete flow: same optimistic pattern as current `app/page.tsx` — `getEventStats` → inline confirmation panel → `deleteEvent(id)` + `clearEventCache(id)` → `setEvents(prev => prev.filter(e => e.id !== id))`
+  - Note: `clearEventCache` touches `localStorage` (not sessionStorage); this is unrelated to the auth session
+- Loading state ("Loading..."), error state ("Failed to load. Retry") with retry button, empty state ("No events yet")
 
-**When to show "+ Add Event" button:**
-- Events list is empty (no events at all), OR
-- Search query returns no matches
+**"+ Add Event" button:**
+- Always visible — shown at the bottom of the page at all times (regardless of whether events exist or search has results)
+- Additionally shown inline in the empty state and in the "no search results" state as a prominent CTA
+- Clicking it sets `showAddModal = true`
 
 **Add Event Modal:**
-- `showAddModal: boolean` state
-- Renders full-screen modal overlay with `EventSetupForm`
-- Modal has X close button (top-right) → closes modal, returns to search
-- After `EventSetupForm` calls `onCreated(event)`:
-  - Modal body switches to confirmation view:
-    - Text: "Event created! Go to this event?"
-    - Button: "Go to this page" → `router.push('/event/${event.id}')`
-  - No auto-redirect; user must press the button
+- Full-screen overlay on top of the events page
+- Two internal states: `'form'` (default) and `'created'`
+- **Form state:** renders `EventSetupForm`. X button (top-right of modal) closes modal (`showAddModal = false`), returns to search
+- **Created state:** triggered when `EventSetupForm` calls `onCreated(event: Event)`
+  - Shows: "Event created!" heading + event name
+  - Shows: "Go to this page" button → `router.push('/event/${event.id}')`
+  - X button still present — closes modal and refreshes event list (`loadEvents()`), returns to search
 
 **Edit mode:**
 - ✏️ button sets `mode = 'edit'`, `editingEvent = event`
-- Renders `EventEditForm` (full page, same as current home page)
-- `onSaved` → refresh events, `mode = 'list'`
-- `onCancel` → `mode = 'list'`
+- Renders `EventEditForm` with props: `{ event: editingEvent, onSaved: handleEditSaved, onCancel: handleEditCancel }`
+  - `onSaved: () => void` — calls `loadEvents()` then `setMode('list')`, clears `editingEvent`
+  - `onCancel: () => void` — sets `mode = 'list'`, clears `editingEvent`
+- Full page (no modal), same pattern as current `app/page.tsx`
 
 ---
 
-## 3. English UI
+## 3. English UI + Capture Rename
 
-All user-visible Thai text replaced with English across:
+All user-visible Thai text replaced with English. `app/page.tsx` is replaced entirely (Thai strings disappear naturally — no separate translation needed).
 
 ### Pages
 
 | File | Key changes |
 |---|---|
 | `app/layout.tsx` | `lang="th"` → `lang="en"` |
-| `app/event/[id]/page.tsx` | "ควบคุมงาน" → "Event Control"; nav links: "Race Timing Record", "Results", "Export", "Settings" |
-| `app/event/[id]/capture/page.tsx` | title/heading → "Race Timing Record" |
-| `app/event/[id]/results/page.tsx` | "ผลการแข่งขัน" → "Results" |
-| `app/event/[id]/export/page.tsx` | "ส่งออก CSV" → "Export CSV" |
-| `app/event/[id]/settings/page.tsx` | "ตั้งค่า" → "Settings" |
+| `app/event/[id]/page.tsx` | Title: "Event Control"; nav links: "Race Timing Record", "Results", "Export", "Settings" |
+| `app/event/[id]/capture/page.tsx` | Any heading/title → "Race Timing Record" |
+| `app/event/[id]/results/page.tsx` | Title → "Results" |
+| `app/event/[id]/export/page.tsx` | Title → "Export CSV" |
+| `app/event/[id]/settings/page.tsx` | Title → "Settings" |
 
 ### Components
 
 | File | Key changes |
 |---|---|
 | `components/EventSetupForm.tsx` | All labels, placeholders, buttons, errors |
-| `components/EventEditForm.tsx` | All labels, placeholders, buttons, errors |
+| `components/EventEditForm.tsx` | All labels, placeholders, buttons, errors (including "กำลังโหลด...", "บันทึก", "ยกเลิก", inline errors) |
 | `components/DistanceList.tsx` | Labels, buttons, placeholders |
 | `components/CaptureScreen.tsx` | All UI text |
 | `components/ManualBibInput.tsx` | Labels, buttons |
@@ -101,15 +108,7 @@ All user-visible Thai text replaced with English across:
 | `components/PrizeConfig.tsx` | Labels, buttons |
 | `components/InstallPrompt.tsx` | Prompt text, buttons |
 
-**Not changed:** Internal error strings in `lib/db.ts`, `lib/storage.ts` (never shown to users directly).
-
----
-
-## 4. Capture Page Rename
-
-- Nav link in `app/event/[id]/page.tsx`: "บันทึกเวลา" → **"Race Timing Record"**
-- Page heading in `app/event/[id]/capture/page.tsx` (if any): → **"Race Timing Record"**
-- Route stays at `/event/[id]/capture` (no URL change)
+**Not changed:** Internal strings in `lib/db.ts`, `lib/storage.ts` (never shown to users directly).
 
 ---
 
@@ -118,6 +117,7 @@ All user-visible Thai text replaced with English across:
 - Storage: `sessionStorage` (key: `authed`, value: `'1'`)
 - Session expires when browser tab is closed
 - No cookie, no JWT, no server-side session
+- Env var: `NEXT_PUBLIC_APP_PIN` — must be set in `.env.local` before running. Add to `.env.example` as `NEXT_PUBLIC_APP_PIN=your_pin_here`
 
 ---
 
@@ -144,27 +144,41 @@ All user-visible Thai text replaced with English across:
 | Edit | `components/AthleteImport.tsx` |
 | Edit | `components/PrizeConfig.tsx` |
 | Edit | `components/InstallPrompt.tsx` |
+| Create | `.env.example` (add `NEXT_PUBLIC_APP_PIN=your_pin_here`) |
 
 ---
 
 ## Tests
 
 ### `__tests__/login-page.test.tsx`
-1. Redirects to `/events` if already authed (sessionStorage has `authed=1`)
-2. Shows "Incorrect PIN" on wrong PIN
-3. Sets sessionStorage and redirects on correct PIN
-4. Shows "Enter PIN" if submitted empty
+
+Mock `next/navigation` → `{ useRouter: () => ({ push: mockPush, replace: mockReplace }) }`.
+Mock `sessionStorage` via `vi.stubGlobal`.
+
+1. Redirects to `/events` (`router.replace`) if sessionStorage has `authed=1` (checked in useEffect on mount)
+2. Shows "Incorrect PIN" when wrong PIN submitted (mock `NEXT_PUBLIC_APP_PIN = '1234'`, submit `'9999'`)
+3. Sets `sessionStorage.authed = '1'` and calls `router.push('/events')` on correct PIN
+4. Shows "Enter PIN" when form submitted with empty input
+5. If `NEXT_PUBLIC_APP_PIN` is empty string, any non-empty submission shows "Incorrect PIN"
 
 ### `__tests__/events-page.test.tsx`
-1. Redirects to `/` if not authed
-2. Renders event list after load
-3. Filters events by search query
-4. Shows "+ Add Event" when list is empty
-5. Shows "+ Add Event" when search returns no matches
-6. Opens add modal on "+ Add Event" click
-7. Shows confirmation after EventSetupForm creates event
-8. "Go to this page" navigates to `/event/[id]`
-9. Edit button opens EventEditForm
-10. Delete button shows confirmation with stats
-11. Delete confirm removes event from list
-12. Logout clears sessionStorage and redirects to `/`
+
+Mock `@/lib/db` → `{ getEvents, getEventStats, deleteEvent }`.
+Mock `@/lib/storage` → `{ clearEventCache }`.
+Mock `next/navigation` → `{ useRouter: () => ({ push: mockPush, replace: mockReplace }) }`.
+Mock `EventSetupForm` and `EventEditForm` as stubs.
+Set `sessionStorage.setItem('authed', '1')` in `beforeEach`.
+
+1. Redirects to `/` (`router.replace`) if sessionStorage does not have `authed=1`
+2. Renders event names after `getEvents` resolves (mock returns 2 events: "Marathon 2026", "5K Fun Run")
+3. Filters events case-insensitively: type "marathon" in search → only "Marathon 2026" visible, "5K Fun Run" not in DOM
+4. Shows "+ Add Event" button when `getEvents` returns empty array
+5. Shows "+ Add Event" button prominently when search query returns no matches (e.g. type "zzz" with 2 events loaded)
+6. "+ Add Event" button click opens modal (EventSetupForm stub visible)
+7. EventSetupForm stub calling `onCreated` with mock event switches modal to confirmation: "Event created!" heading and "Go to this page" button visible
+8. "Go to this page" button calls `router.push('/event/new-1')`
+9. X button on confirmation view closes modal and calls `getEvents` again (loadEvents refresh)
+10. ✏️ edit button click renders EventEditForm stub
+11. Delete button shows confirmation panel — mock `getEventStats` returns `{ recordCount: 5, athleteCount: 3 }` — assert confirmation text contains "5" and "3"
+12. Confirm delete: calls `deleteEvent` and `clearEventCache` — event row removed from DOM optimistically (no re-fetch)
+13. Logout button clears `sessionStorage.authed` and calls `router.push('/')`
