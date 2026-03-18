@@ -53,7 +53,7 @@ export default function SettingsPage() {
   useEffect(() => {
     setDistRows(distances.map((d) => ({
       key: d.id,
-      name: d.name,
+      name: d.name.endsWith(' km') ? d.name.slice(0, -3) : d.name,
       time: new Date(d.start_time).toLocaleTimeString('en-GB', {
         hour: '2-digit', minute: '2-digit', timeZone: event?.timezone ?? 'Asia/Bangkok',
       }),
@@ -71,11 +71,12 @@ export default function SettingsPage() {
     for (const row of rows) {
       const existing = distances.find((d) => d.id === row.key)
       if (!existing) continue
-      if (existing.name !== row.name || !existing.start_time.startsWith(
+      const newName = `${row.name.trim()} km`
+      if (existing.name !== newName || !existing.start_time.startsWith(
         new Date(`${date}T${row.time}:00+07:00`).toISOString().slice(0, 16)
       )) {
         await updateDistance(row.key, {
-          name: row.name,
+          name: newName,
           start_time: rowToStartTime(date, row.time),
         })
       }
@@ -186,7 +187,7 @@ export default function SettingsPage() {
           className="w-full flex items-center justify-between px-5 py-4 text-left"
           onClick={() => setOpenSection(openSection === 2 ? 0 : 2)}
         >
-          <span className="font-medium">Athletes</span>
+          <span className="font-medium">Athletes ({athletes.length})</span>
           {openSection === 2 ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
         </button>
         {openSection === 2 && (

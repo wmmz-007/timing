@@ -27,8 +27,13 @@ vi.mock('next/navigation', () => ({
 }))
 
 vi.mock('@/components/DistanceList', () => ({
-  default: () => <div data-testid="distance-list" />,
-  rowToStartTime: vi.fn(),
+  default: vi.fn((props: { rows: Array<{ name: string }> }) => (
+    <div
+      data-testid="mock-distance-list"
+      data-row-name={props.rows[0]?.name ?? ''}
+    />
+  )),
+  rowToStartTime: vi.fn((date: string, time: string) => `${date}T${time}:00Z`),
 }))
 
 vi.mock('@/components/AthleteImport', () => ({
@@ -54,7 +59,7 @@ const mockEvent = {
 const mockDistance = {
   id: 'dist-1',
   event_id: 'evt-1',
-  name: 'Full',
+  name: '10 km',
   start_time: '2026-04-01T07:00:00.000Z',
   overall_top_n: 3,
   default_top_n: 3,
@@ -79,8 +84,10 @@ beforeEach(() => {
   })
 })
 
-function renderPage() {
+async function renderPage() {
   render(<SettingsPage />)
+  // Wait for the event to load (loading state resolves)
+  await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument())
 }
 
 describe('Settings Page — Access Password', () => {
@@ -134,5 +141,16 @@ describe('Settings Page — Access Password', () => {
     fireEvent.click(screen.getByRole('button', { name: /^cancel$/i }))
     expect(vi.mocked(db.updateEventPassword)).not.toHaveBeenCalled()
     expect(screen.queryByDisplayValue('secret123')).not.toBeInTheDocument()
+  })
+
+  it('strips " km" suffix when displaying loaded distance names', async () => {
+    await renderPage()
+    const distList = await screen.findByTestId('mock-distance-list')
+    expect(distList).toHaveAttribute('data-row-name', '10')
+  })
+
+  it('shows athlete count in Athletes section header', async () => {
+    await renderPage()
+    expect(await screen.findByText(/athletes \(0\)/i)).toBeInTheDocument()
   })
 })
