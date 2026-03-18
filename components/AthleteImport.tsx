@@ -40,7 +40,7 @@ export default function AthleteImport({ eventId, distances, disabled, onImported
       header: true,
       skipEmptyLines: true,
       complete: (result) => {
-        if (!result.data.length) { setError('ไฟล์ไม่มีข้อมูล'); return }
+        if (!result.data.length) { setError('File has no data'); return }
         const cols = result.meta.fields ?? []
         setHeaders(cols)
         setAllRows(result.data)
@@ -56,7 +56,7 @@ export default function AthleteImport({ eventId, distances, disabled, onImported
           age_group: guess(['age', 'subgroup', 'อายุ', 'รุ่น']),
         })
       },
-      error: () => setError('ไม่สามารถอ่านไฟล์ได้'),
+      error: () => setError('Could not read file'),
     })
     e.target.value = ''
   }
@@ -98,10 +98,10 @@ export default function AthleteImport({ eventId, distances, disabled, onImported
       const updated = await getAthletesForEvent(eventId)
       saveAthletes(eventId, updated)
       onImported(updated)
-      setSummary(`นำเข้า ${unique.length} คน, ข้าม ${allRows.length - unique.length} แถว`)
+      setSummary(`Imported ${unique.length} athletes, skipped ${allRows.length - unique.length} rows`)
       setHeaders([]); setPreview([]); setAllRows([])
     } catch (err) {
-      setError('นำเข้าไม่สำเร็จ กรุณาลองใหม่')
+      setError('Import failed. Please try again.')
       console.error(err)
     } finally {
       setLoading(false)
@@ -115,7 +115,7 @@ export default function AthleteImport({ eventId, distances, disabled, onImported
     <div className="space-y-4">
       {hasPlaceholder && (
         <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-          กรุณาตั้งชื่อระยะก่อน import นักกีฬา
+          Name all distances before importing athletes
         </p>
       )}
 
@@ -126,7 +126,7 @@ export default function AthleteImport({ eventId, distances, disabled, onImported
         disabled={disabled || hasPlaceholder}
         className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700 disabled:opacity-40"
       >
-        <Upload size={15} /> เลือกไฟล์ CSV
+        <Upload size={15} /> Select CSV File
       </button>
 
       {error && <p className="text-red-500 text-sm">{error}</p>}
@@ -138,7 +138,7 @@ export default function AthleteImport({ eventId, distances, disabled, onImported
           {(['bib_number', 'distance', 'name', 'gender', 'age_group'] as (keyof ColumnMap)[]).map((field) => (
             <div key={field} className="flex items-center gap-3">
               <span className="w-24 text-xs text-gray-500 shrink-0">
-                {field === 'bib_number' ? 'บิบ *' : field === 'distance' ? 'ระยะ *' : field === 'name' ? 'ชื่อ' : field === 'gender' ? 'เพศ' : 'รุ่นอายุ'}
+                {field === 'bib_number' ? 'Bib *' : field === 'distance' ? 'Distance *' : field === 'name' ? 'Name' : field === 'gender' ? 'Gender' : 'Age Group'}
               </span>
               <select
                 value={colMap[field]}
@@ -146,7 +146,7 @@ export default function AthleteImport({ eventId, distances, disabled, onImported
                 disabled={disabled}
                 className="flex-1 border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-black"
               >
-                <option value="">— ไม่ใช้ —</option>
+                <option value="">— ignore —</option>
                 {headers.map((h) => <option key={h} value={h}>{h}</option>)}
               </select>
             </div>
@@ -155,7 +155,7 @@ export default function AthleteImport({ eventId, distances, disabled, onImported
           {/* Unmatched distances warning */}
           {unmatched.length > 0 && (
             <p className="text-xs text-amber-700">
-              ระยะที่ไม่ตรง: {unmatched.join(', ')} — แถวเหล่านี้จะถูกข้าม
+              Unmatched distances: {unmatched.join(', ')} — these rows will be skipped
             </p>
           )}
 
@@ -181,7 +181,7 @@ export default function AthleteImport({ eventId, distances, disabled, onImported
             disabled={!canImport || loading || !!disabled}
             className="w-full bg-black text-white rounded-xl py-3 text-sm font-medium disabled:opacity-40"
           >
-            {loading ? 'กำลังนำเข้า...' : 'ยืนยันนำเข้า'}
+            {loading ? 'Importing...' : 'Confirm Import'}
           </button>
         </div>
       )}

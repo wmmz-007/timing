@@ -39,12 +39,12 @@ export default function InstallPrompt() {
     return (
       <div className="fixed bottom-6 left-4 right-4 bg-black text-white rounded-2xl p-4 flex items-center justify-between shadow-xl z-50">
         <div>
-          <p className="text-sm font-medium">ติดตั้งแอป</p>
-          <p className="text-xs text-gray-400 mt-0.5">เพิ่มไปยังหน้าจอหลัก</p>
+          <p className="text-sm font-medium">Install App</p>
+          <p className="text-xs text-gray-400 mt-0.5">Add to Home Screen</p>
         </div>
         <div className="flex gap-2">
           <button onClick={() => setDismissed(true)} className="px-3 py-2 text-xs text-gray-400">
-            ไว้ก่อน
+            Later
           </button>
           <button
             onClick={async () => {
@@ -54,7 +54,7 @@ export default function InstallPrompt() {
             }}
             className="px-4 py-2 bg-white text-black rounded-xl text-xs font-medium"
           >
-            ติดตั้ง
+            Install
           </button>
         </div>
       </div>
@@ -67,11 +67,11 @@ export default function InstallPrompt() {
       <div className="fixed bottom-6 left-4 right-4 bg-black text-white rounded-2xl p-4 shadow-xl z-50">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1">
-            <p className="text-sm font-medium mb-1">ติดตั้งแอปบน iPhone</p>
+            <p className="text-sm font-medium mb-1">Install on iPhone</p>
             <p className="text-xs text-gray-400 leading-relaxed">
-              กด <Share size={12} className="inline mx-0.5 -mt-0.5" /> แล้วเลือก{' '}
+              Tap <Share size={12} className="inline mx-0.5 -mt-0.5" /> then select{' '}
               <span className="text-white font-medium inline-flex items-center gap-0.5">
-                <PlusSquare size={12} className="inline" /> เพิ่มในหน้าจอโฮม
+                <PlusSquare size={12} className="inline" /> Add to Home Screen
               </span>
             </p>
           </div>

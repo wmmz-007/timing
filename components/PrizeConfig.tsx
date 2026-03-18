@@ -65,7 +65,7 @@ export default function PrizeConfig({ event, distances, athletes, overrides, dis
     <div className="space-y-5">
       {/* Overall lockout toggle */}
       <div className="flex items-center justify-between">
-        <label className="text-sm text-gray-700">ได้ overall แล้วออกจาก division</label>
+        <label className="text-sm text-gray-700">Overall winners excluded from division</label>
         <button
           type="button"
           onClick={() => handleLockoutChange(!lockout)}
@@ -82,7 +82,7 @@ export default function PrizeConfig({ event, distances, athletes, overrides, dis
           <p className="text-sm font-medium">{dist.name}</p>
           <div className="flex gap-4 items-center">
             <div className="flex-1">
-              <label className="text-xs text-gray-500">Overall top N (ต่อเพศ)</label>
+              <label className="text-xs text-gray-500">Overall top N (per gender)</label>
               <input
                 type="number" min={1}
                 defaultValue={dist.overall_top_n}
@@ -112,7 +112,7 @@ export default function PrizeConfig({ event, distances, athletes, overrides, dis
           onClick={() => setExpanded(!expanded)}
           className="text-sm text-gray-500 underline"
         >
-          {expanded ? 'ซ่อน' : 'ดูทั้งหมด'} subgroup
+          {expanded ? 'Hide' : 'Show all'} subgroup
         </button>
 
         {expanded && (
@@ -134,7 +134,7 @@ export default function PrizeConfig({ event, distances, athletes, overrides, dis
               ))
             )}
             {athletes.length === 0 && (
-              <p className="text-xs text-gray-400">กรุณา import นักกีฬาก่อน</p>
+              <p className="text-xs text-gray-400">Import athletes first</p>
             )}
           </div>
         )}

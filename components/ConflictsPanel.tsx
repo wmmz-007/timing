@@ -18,9 +18,9 @@ export default function ConflictsPanel({ conflicts, timezone }: Props) {
       <div className="space-y-2">
         {conflicts.map((c, i) => (
           <div key={i} className="text-xs text-yellow-800">
-            <span className="font-mono font-bold">บิบ {c.bib_number}</span>
-            {' '}— เก็บไว้: {formatTime(c.kept_finish_time, timezone)}
-            {', '}ทิ้ง: {formatTime(c.discarded_finish_time, timezone)}
+            <span className="font-mono font-bold">Bib {c.bib_number}</span>
+            {' '}— Kept: {formatTime(c.kept_finish_time, timezone)}
+            {', '}Discarded: {formatTime(c.discarded_finish_time, timezone)}
           </div>
         ))}
       </div>

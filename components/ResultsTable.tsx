@@ -41,7 +41,7 @@ export default function ResultsTable({ records, athletes, distances, rankMap }: 
   })
 
   if (records.length === 0) {
-    return <p className="text-gray-400 text-center text-sm py-8">ยังไม่มีผล</p>
+    return <p className="text-gray-400 text-center text-sm py-8">No results yet</p>
   }
 
   return (
@@ -55,7 +55,7 @@ export default function ResultsTable({ records, athletes, distances, rankMap }: 
               onChange={(e) => setFilterDistance(e.target.value)}
               className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none"
             >
-              <option value="all">ทุกระยะ</option>
+              <option value="all">All distances</option>
               {distanceNames.map((n) => <option key={n} value={n}>{n}</option>)}
             </select>
           )}
@@ -65,7 +65,7 @@ export default function ResultsTable({ records, athletes, distances, rankMap }: 
               onChange={(e) => setFilterGender(e.target.value)}
               className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none"
             >
-              <option value="all">ทุกเพศ</option>
+              <option value="all">All genders</option>
               {genders.map((g) => <option key={g} value={g}>{g}</option>)}
             </select>
           )}
@@ -75,9 +75,9 @@ export default function ResultsTable({ records, athletes, distances, rankMap }: 
       {/* Table header */}
       <div className="grid grid-cols-[2rem_3rem_1fr_4rem_3rem_3rem] text-xs text-gray-400 font-medium uppercase tracking-wider pb-2 border-b border-gray-100 gap-1">
         <span>#</span>
-        <span>บิบ</span>
-        <span>ชื่อ</span>
-        <span className="text-right">เวลาสุทธิ</span>
+        <span>Bib</span>
+        <span>Name</span>
+        <span className="text-right">Net Time</span>
         <span className="text-center">OA</span>
         <span className="text-center">DIV</span>
       </div>
