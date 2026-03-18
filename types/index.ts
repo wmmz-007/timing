@@ -4,6 +4,7 @@ export interface Event {
   timezone: string
   overall_lockout: boolean
   created_at: string
+  password: string
 }
 
 export interface EventDistance {

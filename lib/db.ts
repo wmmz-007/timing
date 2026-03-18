@@ -6,11 +6,13 @@ import type { Event, FinishRecord, EventDistance, Athlete, SubgroupPrizeOverride
 export async function createEventWithDistances(
   name: string,
   timezone: string,
+  password: string,
   distances: { name: string; start_time: string; overall_top_n?: number; default_top_n?: number }[]
 ): Promise<Event> {
   const { data, error } = await supabase.rpc('create_event_with_distances', {
     p_name: name,
     p_timezone: timezone,
+    p_password: password,
     p_distances: JSON.stringify(distances),
   })
   if (error) throw error
@@ -48,6 +50,28 @@ export async function updateEventName(id: string, name: string): Promise<void> {
   const { error } = await supabase
     .from('events')
     .update({ name })
+    .eq('id', id)
+  if (error) throw error
+}
+
+export async function getEventByPassword(password: string): Promise<Event | null> {
+  const trimmed = password.trim()
+  if (!trimmed) return null
+  const { data, error } = await supabase
+    .from('events')
+    .select('*')
+    .eq('password', trimmed)
+    .neq('password', '')
+    .limit(1)
+    .maybeSingle()
+  if (error) throw error
+  return data as Event | null
+}
+
+export async function updateEventPassword(id: string, password: string): Promise<void> {
+  const { error } = await supabase
+    .from('events')
+    .update({ password })
     .eq('id', id)
   if (error) throw error
 }
