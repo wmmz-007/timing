@@ -1,3 +1,5 @@
+BEGIN;
+
 -- Add password column to events
 ALTER TABLE events ADD COLUMN password TEXT NOT NULL DEFAULT '';
 
@@ -27,3 +29,5 @@ BEGIN
   RETURN v_event;
 END;
 $$ LANGUAGE plpgsql;
+
+COMMIT;

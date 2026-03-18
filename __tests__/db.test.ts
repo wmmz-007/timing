@@ -74,12 +74,13 @@ describe('createEventWithDistances', () => {
     }
     const mockRpc = vi.fn(() => rpcChain)
     vi.mocked(supabase as unknown as { rpc: typeof mockRpc }).rpc = mockRpc
-    const result = await createEventWithDistances('Test', 'Asia/Bangkok', [
+    const result = await createEventWithDistances('Test', 'Asia/Bangkok', 'secret', [
       { name: '10K', start_time: '2026-03-17T07:00:00+07:00' },
     ])
     expect(mockRpc).toHaveBeenCalledWith('create_event_with_distances', expect.objectContaining({
       p_name: 'Test',
       p_timezone: 'Asia/Bangkok',
+      p_password: 'secret',
       p_distances: JSON.stringify([{ name: '10K', start_time: '2026-03-17T07:00:00+07:00' }]),
     }))
     expect(result.name).toBe('Test')

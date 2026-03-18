@@ -71,7 +71,7 @@ export async function getEventByPassword(password: string): Promise<Event | null
 export async function updateEventPassword(id: string, password: string): Promise<void> {
   const { error } = await supabase
     .from('events')
-    .update({ password })
+    .update({ password: password.trim() })
     .eq('id', id)
   if (error) throw error
 }
