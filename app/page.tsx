@@ -5,8 +5,9 @@ import { Timer } from 'lucide-react'
 
 export default function LoginPage() {
   const router = useRouter()
-  const [pin, setPin] = useState('')
+  const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (sessionStorage.getItem('authed') === '1') {
@@ -14,17 +15,27 @@ export default function LoginPage() {
     }
   }, [router])
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!pin) { setError('Enter PIN'); return }
-    const correct = process.env.NEXT_PUBLIC_APP_PIN
-    if (!correct || pin !== correct) {
-      setError('Incorrect PIN')
-      setPin('')
-      return
+    const trimmed = password.trim()
+    if (!trimmed) { setError('Enter password'); return }
+    setLoading(true)
+    setError(null)
+    try {
+      const { getEventByPassword } = await import('@/lib/db')
+      const event = await getEventByPassword(trimmed)
+      if (!event) {
+        setError('Incorrect password')
+        setPassword('')
+        return
+      }
+      sessionStorage.setItem('authed', '1')
+      router.push(`/event/${event.id}`)
+    } catch {
+      setError('Something went wrong. Try again.')
+    } finally {
+      setLoading(false)
     }
-    sessionStorage.setItem('authed', '1')
-    router.push('/events')
   }
 
   return (
@@ -35,13 +46,13 @@ export default function LoginPage() {
       </div>
       <form onSubmit={handleSubmit} className="w-full max-w-xs flex flex-col gap-4">
         <div className="flex flex-col gap-1">
-          <label htmlFor="pin" className="text-sm font-medium">PIN</label>
+          <label htmlFor="password" className="text-sm font-medium">Event Password</label>
           <input
-            id="pin"
-            aria-label="PIN"
+            id="password"
+            aria-label="Event Password"
             type="password"
-            value={pin}
-            onChange={e => { setPin(e.target.value); setError(null) }}
+            value={password}
+            onChange={e => { setPassword(e.target.value); setError(null) }}
             className="border rounded-xl px-4 py-3 text-base"
             autoFocus
             autoComplete="current-password"
@@ -50,9 +61,10 @@ export default function LoginPage() {
         {error && <p className="text-red-500 text-sm">{error}</p>}
         <button
           type="submit"
-          className="bg-black text-white rounded-xl py-4 text-base font-medium"
+          disabled={loading}
+          className="bg-black text-white rounded-xl py-4 text-base font-medium disabled:opacity-50"
         >
-          Enter
+          {loading ? 'Checking...' : 'Enter'}
         </button>
       </form>
     </main>

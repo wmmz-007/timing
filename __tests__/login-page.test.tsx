@@ -3,9 +3,14 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 const mockPush = vi.fn()
 const mockReplace = vi.fn()
+const mockGetEventByPassword = vi.fn()
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush, replace: mockReplace }),
+}))
+
+vi.mock('@/lib/db', () => ({
+  getEventByPassword: (...args: unknown[]) => mockGetEventByPassword(...args),
 }))
 
 let storageMock: Record<string, string> = {}
@@ -14,19 +19,20 @@ beforeEach(() => {
   storageMock = {}
   mockPush.mockReset()
   mockReplace.mockReset()
+  mockGetEventByPassword.mockReset()
   vi.stubGlobal('sessionStorage', {
     getItem: (k: string) => storageMock[k] ?? null,
     setItem: (k: string, v: string) => { storageMock[k] = v },
     removeItem: (k: string) => { delete storageMock[k] },
   })
-  vi.stubEnv('NEXT_PUBLIC_APP_PIN', '1234')
 })
 
 afterEach(() => {
   vi.unstubAllGlobals()
-  vi.unstubAllEnvs()
 })
 
+// Use vi.resetModules() + dynamic import so the fresh module picks up the mocks
+// (consistent with the rest of the test suite that mocks @/lib/db)
 async function renderPage() {
   vi.resetModules()
   const { default: Page } = await import('@/app/page')
@@ -40,32 +46,40 @@ describe('Login Page', () => {
     await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/events'))
   })
 
-  it('shows Incorrect PIN on wrong PIN', async () => {
+  it('shows "Incorrect password" when getEventByPassword returns null', async () => {
+    mockGetEventByPassword.mockResolvedValue(null)
     await renderPage()
-    fireEvent.change(screen.getByLabelText('PIN'), { target: { value: '9999' } })
+    fireEvent.change(screen.getByLabelText('Event Password'), { target: { value: 'wrongpass' } })
     fireEvent.click(screen.getByRole('button', { name: /enter/i }))
-    expect(screen.getByText('Incorrect PIN')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('Incorrect password')).toBeInTheDocument())
   })
 
-  it('sets sessionStorage authed and redirects to /events on correct PIN', async () => {
+  it('sets sessionStorage authed and calls router.push on correct password', async () => {
+    mockGetEventByPassword.mockResolvedValue({
+      id: 'e1', name: 'Test', timezone: 'Asia/Bangkok',
+      overall_lockout: false, created_at: '', password: 'pass1234',
+    })
     await renderPage()
-    fireEvent.change(screen.getByLabelText('PIN'), { target: { value: '1234' } })
+    fireEvent.change(screen.getByLabelText('Event Password'), { target: { value: 'pass1234' } })
     fireEvent.click(screen.getByRole('button', { name: /enter/i }))
-    expect(storageMock['authed']).toBe('1')
-    expect(mockPush).toHaveBeenCalledWith('/events')
+    await waitFor(() => {
+      expect(storageMock['authed']).toBe('1')
+      expect(mockPush).toHaveBeenCalledWith('/event/e1')
+    })
   })
 
-  it('shows Enter PIN on empty submit', async () => {
+  it('shows "Enter password" on empty submit', async () => {
     await renderPage()
     fireEvent.click(screen.getByRole('button', { name: /enter/i }))
-    expect(screen.getByText('Enter PIN')).toBeInTheDocument()
+    expect(screen.getByText('Enter password')).toBeInTheDocument()
+    expect(mockGetEventByPassword).not.toHaveBeenCalled()
   })
 
-  it('shows Incorrect PIN when NEXT_PUBLIC_APP_PIN is empty', async () => {
-    vi.stubEnv('NEXT_PUBLIC_APP_PIN', '')
+  it('does not call getEventByPassword when input is whitespace-only', async () => {
     await renderPage()
-    fireEvent.change(screen.getByLabelText('PIN'), { target: { value: 'anything' } })
+    fireEvent.change(screen.getByLabelText('Event Password'), { target: { value: '   ' } })
     fireEvent.click(screen.getByRole('button', { name: /enter/i }))
-    expect(screen.getByText('Incorrect PIN')).toBeInTheDocument()
+    expect(screen.getByText('Enter password')).toBeInTheDocument()
+    expect(mockGetEventByPassword).not.toHaveBeenCalled()
   })
 })
