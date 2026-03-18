@@ -31,6 +31,7 @@ export default function AthleteImport({ eventId, distances, disabled, onImported
 
   const hasPlaceholder = distances.some((d) => d.name === 'ทั้งหมด')
   const distNameById = new Map(distances.map((d) => [d.name.toLowerCase(), d.id]))
+  const noDistances = distances.length === 0
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -108,7 +109,7 @@ export default function AthleteImport({ eventId, distances, disabled, onImported
     }
   }
 
-  const canImport = !!colMap.bib_number && !!colMap.distance && !hasPlaceholder
+  const canImport = !!colMap.bib_number && !!colMap.distance && !hasPlaceholder && !noDistances
   const unmatched = unmatchedDistances()
 
   return (
@@ -119,11 +120,17 @@ export default function AthleteImport({ eventId, distances, disabled, onImported
         </p>
       )}
 
+      {noDistances && (
+        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+          Add distances before importing athletes
+        </p>
+      )}
+
       <input ref={inputRef} type="file" accept=".csv" onChange={handleFile} className="hidden" />
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
-        disabled={disabled || hasPlaceholder}
+        disabled={disabled || hasPlaceholder || noDistances}
         className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700 disabled:opacity-40"
       >
         <Upload size={15} /> Select CSV File
