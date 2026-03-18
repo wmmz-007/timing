@@ -21,14 +21,14 @@ const dupToast = {
 describe('CaptureToast', () => {
   it('renders success toast with bib number', () => {
     render(<CaptureToast toasts={[successToast]} timezone={TZ} onUndo={() => {}} onOverwrite={() => {}} onSkip={() => {}} onDismiss={() => {}} />)
-    expect(screen.getByText(/บิบ 235/)).toBeInTheDocument()
-    expect(screen.getByText('ย้อนกลับ')).toBeInTheDocument()
+    expect(screen.getByText(/Bib 235/)).toBeInTheDocument()
+    expect(screen.getByText('Undo')).toBeInTheDocument()
   })
 
   it('calls onUndo with localId when undo tapped', () => {
     const onUndo = vi.fn()
     render(<CaptureToast toasts={[successToast]} timezone={TZ} onUndo={onUndo} onOverwrite={() => {}} onSkip={() => {}} onDismiss={() => {}} />)
-    fireEvent.click(screen.getByText('ย้อนกลับ'))
+    fireEvent.click(screen.getByText('Undo'))
     expect(onUndo).toHaveBeenCalledWith('lid-1')
   })
 
@@ -43,22 +43,22 @@ describe('CaptureToast', () => {
 
   it('renders duplicate toast with อ่านใหม่ and ข้าม buttons', () => {
     render(<CaptureToast toasts={[dupToast]} timezone={TZ} onUndo={() => {}} onOverwrite={() => {}} onSkip={() => {}} onDismiss={() => {}} />)
-    expect(screen.getByText(/235 ซ้ำ/)).toBeInTheDocument()
-    expect(screen.getByText('อ่านใหม่')).toBeInTheDocument()
-    expect(screen.getByText('ข้าม')).toBeInTheDocument()
+    expect(screen.getByText(/235 duplicate/)).toBeInTheDocument()
+    expect(screen.getByText('Overwrite')).toBeInTheDocument()
+    expect(screen.getByText('Skip')).toBeInTheDocument()
   })
 
   it('calls onOverwrite with bib when อ่านใหม่ tapped', () => {
     const onOverwrite = vi.fn()
     render(<CaptureToast toasts={[dupToast]} timezone={TZ} onUndo={() => {}} onOverwrite={onOverwrite} onSkip={() => {}} onDismiss={() => {}} />)
-    fireEvent.click(screen.getByText('อ่านใหม่'))
+    fireEvent.click(screen.getByText('Overwrite'))
     expect(onOverwrite).toHaveBeenCalledWith('235')
   })
 
   it('calls onSkip when ข้าม tapped', () => {
     const onSkip = vi.fn()
     render(<CaptureToast toasts={[dupToast]} timezone={TZ} onUndo={() => {}} onOverwrite={() => {}} onSkip={onSkip} onDismiss={() => {}} />)
-    fireEvent.click(screen.getByText('ข้าม'))
+    fireEvent.click(screen.getByText('Skip'))
     expect(onSkip).toHaveBeenCalledOnce()
   })
 

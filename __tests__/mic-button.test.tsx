@@ -4,12 +4,12 @@ import MicButton from '@/components/MicButton'
 describe('MicButton', () => {
   it('renders idle state when listening=false', () => {
     render(<MicButton listening={false} onToggle={() => {}} />)
-    expect(screen.getByRole('button')).toHaveTextContent('กดพูดเลขบิบ')
+    expect(screen.getByRole('button')).toHaveTextContent('Hold to Record Bib')
   })
 
   it('renders listening state when listening=true', () => {
     render(<MicButton listening={true} onToggle={() => {}} />)
-    expect(screen.getByRole('button')).toHaveTextContent('กำลังฟัง...')
+    expect(screen.getByRole('button')).toHaveTextContent('Listening...')
   })
 
   it('calls onToggle when pressed', () => {

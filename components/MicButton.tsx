@@ -24,7 +24,7 @@ export default function MicButton({ listening, onToggle, disabled }: Props) {
       `}
     >
       <Mic size={40} strokeWidth={1.5} className="mb-2" />
-      <span>{listening ? 'กำลังฟัง...' : 'กดพูดเลขบิบ'}</span>
+      <span>{listening ? 'Listening...' : 'Hold to Record Bib'}</span>
     </button>
   )
 }

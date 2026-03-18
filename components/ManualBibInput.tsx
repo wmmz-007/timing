@@ -31,7 +31,7 @@ export default function ManualBibInput({ onSubmit }: Props) {
         onClick={() => setOpen(true)}
         className="text-sm text-gray-400 underline underline-offset-2"
       >
-        กรอกบิบเอง
+        Enter Bib Manually
       </button>
     )
   }
@@ -72,7 +72,7 @@ export default function ManualBibInput({ onSubmit }: Props) {
         disabled={!bib}
         className="w-full py-3 rounded-xl bg-black text-white font-medium disabled:opacity-40"
       >
-        บันทึก
+        Save
       </button>
     </div>
   )

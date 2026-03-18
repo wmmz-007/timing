@@ -202,7 +202,7 @@ export default function CaptureScreen({ event, distances, athletes: _athletes }:
 
       {distances.length === 0 ? null : distances.length === 1 ? (
         <div className="w-full text-center">
-          <p className="text-xs text-gray-400 uppercase tracking-wider font-medium">ปล่อยตัว</p>
+          <p className="text-xs text-gray-400 uppercase tracking-wider font-medium">Start</p>
           <p className="text-2xl font-mono font-semibold mt-0.5">
             {formatTime(distances[0].start_time, event.timezone)}
           </p>
