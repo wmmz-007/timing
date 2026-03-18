@@ -1,7 +1,7 @@
 'use client'
 import { useState, useRef } from 'react'
 import Papa from 'papaparse'
-import { Upload } from 'lucide-react'
+import { Upload, Download } from 'lucide-react'
 import type { Athlete, EventDistance } from '@/types'
 
 interface ColumnMap {
@@ -17,6 +17,13 @@ interface Props {
   distances: EventDistance[]
   disabled?: boolean
   onImported: (athletes: Athlete[]) => void
+}
+
+function escapeCsv(value: string): string {
+  if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+    return `"${value.replace(/"/g, '""')}"`
+  }
+  return value
 }
 
 export default function AthleteImport({ eventId, distances, disabled, onImported }: Props) {
@@ -109,6 +116,19 @@ export default function AthleteImport({ eventId, distances, disabled, onImported
     }
   }
 
+  function downloadTemplate() {
+    const header = 'bib_number,name,distance,gender,age_group'
+    const rows = distances.map((d) => `1,Example Athlete,${escapeCsv(d.name)},,`)
+    const csv = [header, ...rows].join('\n')
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'athlete-template.csv'
+    a.click()
+    setTimeout(() => URL.revokeObjectURL(url), 100)
+  }
+
   const canImport = !!colMap.bib_number && !!colMap.distance && !hasPlaceholder && !noDistances
   const unmatched = unmatchedDistances()
 
@@ -127,14 +147,24 @@ export default function AthleteImport({ eventId, distances, disabled, onImported
       )}
 
       <input ref={inputRef} type="file" accept=".csv" onChange={handleFile} className="hidden" />
-      <button
-        type="button"
-        onClick={() => inputRef.current?.click()}
-        disabled={disabled || hasPlaceholder || noDistances}
-        className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700 disabled:opacity-40"
-      >
-        <Upload size={15} /> Select CSV File
-      </button>
+      {/* Button row */}
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={downloadTemplate}
+          className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700"
+        >
+          <Download size={15} /> Download Template
+        </button>
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={disabled || hasPlaceholder || noDistances}
+          className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700 disabled:opacity-40"
+        >
+          <Upload size={15} /> Select CSV File
+        </button>
+      </div>
 
       {error && <p className="text-red-500 text-sm">{error}</p>}
       {summary && <p className="text-green-700 text-sm">{summary}</p>}
