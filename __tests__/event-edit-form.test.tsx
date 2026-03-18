@@ -56,7 +56,7 @@ beforeEach(() => {
 describe('EventEditForm', () => {
   it('shows loading then pre-filled form with event name', async () => {
     render(<EventEditForm event={mockEvent} onSaved={vi.fn()} onCancel={vi.fn()} />)
-    expect(screen.getByText('กำลังโหลด...')).toBeInTheDocument()
+    expect(screen.getByText('Loading...')).toBeInTheDocument()
     await waitFor(() => expect(screen.getByDisplayValue('Test Event')).toBeInTheDocument())
     expect(screen.getByDisplayValue('10K')).toBeInTheDocument()
   })
@@ -64,8 +64,8 @@ describe('EventEditForm', () => {
   it('calls onCancel when cancel button clicked', async () => {
     const onCancel = vi.fn()
     render(<EventEditForm event={mockEvent} onSaved={vi.fn()} onCancel={onCancel} />)
-    await waitFor(() => screen.getByText('‹ ยกเลิก'))
-    fireEvent.click(screen.getByText('‹ ยกเลิก'))
+    await waitFor(() => screen.getByText('‹ Cancel'))
+    fireEvent.click(screen.getByText('‹ Cancel'))
     expect(onCancel).toHaveBeenCalledOnce()
   })
 
@@ -76,11 +76,18 @@ describe('EventEditForm', () => {
     await waitFor(() => expect(onCancel).toHaveBeenCalledOnce())
   })
 
+  it('shows load error message when getDistancesForEvent throws', async () => {
+    vi.mocked(getDistancesForEvent).mockRejectedValue(new Error('network error'))
+    render(<EventEditForm event={mockEvent} onSaved={vi.fn()} onCancel={vi.fn()} />)
+    await waitFor(() => expect(screen.getByText('Failed to load. Please try again.')).toBeInTheDocument())
+    expect(screen.queryByText('Loading...')).not.toBeInTheDocument()
+  })
+
   it('skips updateEventName when name unchanged', async () => {
     const onSaved = vi.fn()
     render(<EventEditForm event={mockEvent} onSaved={onSaved} onCancel={vi.fn()} />)
     await waitFor(() => screen.getByDisplayValue('Test Event'))
-    fireEvent.click(screen.getByRole('button', { name: /บันทึก/i }))
+    fireEvent.click(screen.getByRole('button', { name: /Save/i }))
     await waitFor(() => expect(onSaved).toHaveBeenCalled())
     expect(updateEventName).not.toHaveBeenCalled()
   })
@@ -90,7 +97,7 @@ describe('EventEditForm', () => {
     render(<EventEditForm event={mockEvent} onSaved={onSaved} onCancel={vi.fn()} />)
     await waitFor(() => screen.getByDisplayValue('Test Event'))
     fireEvent.change(screen.getByDisplayValue('Test Event'), { target: { value: 'New Name' } })
-    fireEvent.click(screen.getByRole('button', { name: /บันทึก/i }))
+    fireEvent.click(screen.getByRole('button', { name: /Save/i }))
     await waitFor(() => expect(updateEventName).toHaveBeenCalledWith('evt-1', 'New Name'))
     expect(onSaved).toHaveBeenCalled()
   })
@@ -99,7 +106,7 @@ describe('EventEditForm', () => {
     const onSaved = vi.fn()
     render(<EventEditForm event={mockEvent} onSaved={onSaved} onCancel={vi.fn()} />)
     await waitFor(() => screen.getByDisplayValue('10K'))
-    fireEvent.click(screen.getByRole('button', { name: /บันทึก/i }))
+    fireEvent.click(screen.getByRole('button', { name: /Save/i }))
     await waitFor(() => expect(updateDistance).toHaveBeenCalledWith('dist-1', expect.objectContaining({ name: '10K' })))
     expect(onSaved).toHaveBeenCalled()
   })
@@ -114,7 +121,7 @@ describe('EventEditForm', () => {
     await waitFor(() => screen.getAllByRole('button', { name: /remove distance/i }))
     const removeBtns = screen.getAllByRole('button', { name: /remove distance/i })
     fireEvent.click(removeBtns[1])
-    fireEvent.click(screen.getByRole('button', { name: /บันทึก/i }))
-    await waitFor(() => expect(screen.getByText(/ลบระยะ.*ไม่ได้/)).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: /Save/i }))
+    await waitFor(() => expect(screen.getByText(/Cannot delete distance/)).toBeInTheDocument())
   })
 })

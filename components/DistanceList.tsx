@@ -37,7 +37,7 @@ export default function DistanceList({ rows, date, onChange, hideAdd }: Props) {
             type="text"
             value={row.name}
             onChange={(e) => update(row.key, 'name', e.target.value)}
-            placeholder="เช่น 10K"
+            placeholder="e.g. 10K"
             className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black"
             required
           />
@@ -65,7 +65,7 @@ export default function DistanceList({ rows, date, onChange, hideAdd }: Props) {
           onClick={addRow}
           className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 mt-1"
         >
-          <Plus size={14} /> เพิ่มระยะ
+          <Plus size={14} /> Add Distance
         </button>
       )}
     </div>

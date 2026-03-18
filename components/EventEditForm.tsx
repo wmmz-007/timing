@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { Event, EventDistance } from '@/types'
 import DistanceList, { type DistanceRow, rowToStartTime } from './DistanceList'
 
@@ -26,41 +26,51 @@ export default function EventEditForm({ event, onSaved, onCancel }: Props) {
   const [distances, setDistances] = useState<DistanceRow[]>([])
   const [originalDistances, setOriginalDistances] = useState<Map<string, string>>(new Map())
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [deleteErrors, setDeleteErrors] = useState<string[]>([])
 
+  const onCancelRef = useRef(onCancel)
+  useEffect(() => { onCancelRef.current = onCancel })
+
   useEffect(() => {
     let cancelled = false
     async function load() {
-      const { getDistancesForEvent } = await import('@/lib/db')
-      const dists = await getDistancesForEvent(event.id)
-      if (cancelled) return
+      try {
+        const { getDistancesForEvent } = await import('@/lib/db')
+        const dists = await getDistancesForEvent(event.id)
+        if (cancelled) return
 
-      // Stale edit guard: if no distances, event was deleted on another device
-      if (dists.length === 0) {
-        onCancel()
-        return
+        // Stale edit guard: if no distances, event was deleted on another device
+        if (dists.length === 0) {
+          onCancelRef.current()
+          return
+        }
+
+        const sorted = [...dists].sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+        const derivedDate = isoToLocalParts(sorted[0].start_time).date
+
+        const rows: DistanceRow[] = sorted.map((d) => ({
+          key: d.id,
+          distanceId: d.id,
+          name: d.name,
+          time: isoToLocalParts(d.start_time).time,
+        }))
+
+        setDate(derivedDate)
+        setDistances(rows)
+        setOriginalDistances(new Map(dists.map((d) => [d.id, d.name])))
+        setLoading(false)
+      } catch {
+        if (cancelled) return
+        setLoadError(true)
+        setLoading(false)
       }
-
-      const sorted = [...dists].sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
-      const derivedDate = isoToLocalParts(sorted[0].start_time).date
-
-      const rows: DistanceRow[] = dists.map((d) => ({
-        key: d.id,
-        distanceId: d.id,
-        name: d.name,
-        time: isoToLocalParts(d.start_time).time,
-      }))
-
-      setDate(derivedDate)
-      setDistances(rows)
-      setOriginalDistances(new Map(dists.map((d) => [d.id, d.name])))
-      setLoading(false)
     }
     load()
     return () => { cancelled = true }
-  }, [event.id, onCancel])
+  }, [event.id])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -85,7 +95,7 @@ export default function EventEditForm({ event, onSaved, onCancel }: Props) {
           await deleteDistance(distId)
         } catch {
           const distName = originalDistances.get(distId) ?? distId
-          errs.push(`ลบระยะ "${distName}" ไม่ได้ เนื่องจากมีนักกีฬา กรุณาจัดการใน Settings`)
+          errs.push(`Cannot delete distance "${distName}" — athletes are assigned. Manage in Settings.`)
         }
       }
 
@@ -109,7 +119,7 @@ export default function EventEditForm({ event, onSaved, onCancel }: Props) {
 
       onSaved()
     } catch {
-      setError('บันทึกไม่ได้ กรุณาลองใหม่')
+      setError('Failed to save. Please try again.')
     } finally {
       setSaving(false)
     }
@@ -119,17 +129,19 @@ export default function EventEditForm({ event, onSaved, onCancel }: Props) {
     <div>
       <div className="flex items-center gap-3 mb-6">
         <button type="button" onClick={onCancel} className="text-sm text-gray-400">
-          ‹ ยกเลิก
+          ‹ Cancel
         </button>
-        <h2 className="text-lg font-semibold">แก้ไขงาน</h2>
+        <h2 className="text-lg font-semibold">Edit Event</h2>
       </div>
 
       {loading ? (
-        <p className="text-gray-400 text-sm text-center py-8">กำลังโหลด...</p>
+        <p className="text-gray-400 text-sm text-center py-8">Loading...</p>
+      ) : loadError ? (
+        <p className="text-red-400 text-sm text-center py-8">Failed to load. Please try again.</p>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">ชื่องาน</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Event Name</label>
             <input
               type="text"
               value={name}
@@ -139,7 +151,7 @@ export default function EventEditForm({ event, onSaved, onCancel }: Props) {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">วันที่</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
             <input
               type="date"
               value={date}
@@ -149,7 +161,7 @@ export default function EventEditForm({ event, onSaved, onCancel }: Props) {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">ระยะและเวลาปล่อยตัว</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Distances & Start Times</label>
             <DistanceList rows={distances} date={date} onChange={setDistances} />
           </div>
 
@@ -158,7 +170,7 @@ export default function EventEditForm({ event, onSaved, onCancel }: Props) {
               {deleteErrors.map((msg, i) => (
                 <p key={i} className="text-sm text-orange-700">{msg}</p>
               ))}
-              <p className="text-xs text-orange-500 mt-1">การเปลี่ยนแปลงอื่นๆ ถูกบันทึกแล้ว</p>
+              <p className="text-xs text-orange-500 mt-1">Other changes were saved.</p>
             </div>
           )}
 
@@ -169,7 +181,7 @@ export default function EventEditForm({ event, onSaved, onCancel }: Props) {
             disabled={saving}
             className="w-full bg-black text-white rounded-xl py-4 text-base font-medium disabled:opacity-50"
           >
-            {saving ? 'กำลังบันทึก...' : 'บันทึก'}
+            {saving ? 'Saving...' : 'Save'}
           </button>
         </form>
       )}

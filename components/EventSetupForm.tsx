@@ -35,7 +35,7 @@ export default function EventSetupForm({ onCreated }: Props) {
       saveEvent(event)
       onCreated(event)
     } catch (err) {
-      setError('ไม่สามารถสร้างงานได้ กรุณาลองใหม่')
+      setError('Failed to create event. Please try again.')
       console.error(err)
     } finally {
       setLoading(false)
@@ -45,18 +45,18 @@ export default function EventSetupForm({ onCreated }: Props) {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">ชื่องาน</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Event Name</label>
         <input
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="เช่น งานวิ่ง XYZ 2026"
+          placeholder="e.g. XYZ Marathon 2026"
           className="w-full border border-gray-200 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-black"
           required
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">วันที่</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
         <input
           type="date"
           value={date}
@@ -66,7 +66,7 @@ export default function EventSetupForm({ onCreated }: Props) {
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">ระยะและเวลาปล่อยตัว</label>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Distances & Start Times</label>
         <DistanceList rows={distances} date={date} onChange={setDistances} />
       </div>
       {error && <p className="text-red-500 text-sm">{error}</p>}
@@ -75,7 +75,7 @@ export default function EventSetupForm({ onCreated }: Props) {
         disabled={loading}
         className="w-full bg-black text-white rounded-xl py-4 text-base font-medium disabled:opacity-50"
       >
-        {loading ? 'กำลังสร้าง...' : 'สร้างงาน'}
+        {loading ? 'Creating...' : 'Create Event'}
       </button>
     </form>
   )
