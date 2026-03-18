@@ -123,7 +123,7 @@ export default function EventsPage() {
   const filtered = events.filter(e =>
     e.name.toLowerCase().includes(query.toLowerCase())
   )
-  const noMatches = query.length > 0 && filtered.length === 0
+  const noMatches = !listLoading && !listError && query.length > 0 && filtered.length === 0
 
   if (mode === 'edit' && editingEvent) {
     return (
@@ -242,7 +242,7 @@ export default function EventsPage() {
         </div>
       )}
 
-      {!listLoading && !listError && (
+      {!listLoading && !listError && events.length > 0 && (
         <div className="mt-6">
           <button
             onClick={openAddModal}
