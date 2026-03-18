@@ -31,7 +31,7 @@ export default function EventSetupForm({ onCreated }: Props) {
       const { createEventWithDistances } = await import('@/lib/db')
       const { saveEvent } = await import('@/lib/storage')
       const distancePayload = distances.map((row) => ({
-        name: row.name,
+        name: `${row.name.trim()} km`,
         start_time: rowToStartTime(date, row.time),
       }))
       const event = await createEventWithDistances(name, 'Asia/Bangkok', trimmedPassword, distancePayload)

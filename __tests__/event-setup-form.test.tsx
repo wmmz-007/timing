@@ -68,4 +68,31 @@ describe('EventSetupForm — password field', () => {
       expect.any(Array)
     )
   })
+
+  it('appends " km" to distance name when calling createEventWithDistances', async () => {
+    const mockEvent = {
+      id: 'new-2', name: 'Test Event', timezone: 'Asia/Bangkok',
+      overall_lockout: false, created_at: '', password: 'testpass',
+    }
+    mockCreateEventWithDistances.mockResolvedValue(mockEvent)
+    render(<EventSetupForm onCreated={vi.fn()} />)
+
+    fireEvent.change(screen.getByPlaceholderText('e.g. XYZ Marathon 2026'), { target: { value: 'Test Event' } })
+    fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-01-01' } })
+    fireEvent.change(screen.getByLabelText('Event Password'), { target: { value: 'testpass' } })
+    fireEvent.change(screen.getByPlaceholderText('e.g. 10'), { target: { value: '10' } })
+
+    fireEvent.click(screen.getByRole('button', { name: /create event/i }))
+
+    await waitFor(() => {
+      expect(mockCreateEventWithDistances).toHaveBeenCalledWith(
+        'Test Event',
+        'Asia/Bangkok',
+        'testpass',
+        expect.arrayContaining([
+          expect.objectContaining({ name: '10 km' }),
+        ])
+      )
+    })
+  })
 })
