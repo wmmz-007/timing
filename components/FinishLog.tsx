@@ -13,7 +13,7 @@ export default function FinishLog({ records, timezone }: Props) {
 
   return (
     <div className="w-full">
-      <p className="text-xs text-gray-400 mb-2 font-medium uppercase tracking-wider">ล่าสุด</p>
+      <p className="text-xs text-gray-400 mb-2 font-medium uppercase tracking-wider">Recent</p>
       <div className="divide-y divide-gray-100">
         {recent.map((r) => (
           <div key={r.local_id} className="flex justify-between py-2.5 text-sm">
