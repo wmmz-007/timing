@@ -13,6 +13,10 @@ vi.mock('@/lib/db', () => ({
   updateEventPassword: vi.fn(),
   updateDistance: vi.fn(),
   deleteDistanceAndAthletes: vi.fn(),
+  addDistance: vi.fn().mockResolvedValue({
+    id: 'dist-2', event_id: 'evt-1', name: '21 km',
+    start_time: '2026-01-01T08:00:00Z', overall_top_n: 3, default_top_n: 3,
+  }),
 }))
 
 vi.mock('@/lib/storage', () => ({
@@ -71,6 +75,7 @@ beforeEach(() => {
   vi.mocked(db.getAthletesForEvent).mockReset()
   vi.mocked(db.getSubgroupOverrides).mockReset()
   vi.mocked(db.updateEventPassword).mockReset()
+  vi.mocked(db.addDistance).mockReset()
   mockPush.mockReset()
 
   vi.mocked(db.getEvent).mockResolvedValue(mockEvent)
@@ -78,6 +83,10 @@ beforeEach(() => {
   vi.mocked(db.getAthletesForEvent).mockResolvedValue([])
   vi.mocked(db.getSubgroupOverrides).mockResolvedValue([])
   vi.mocked(db.updateEventPassword).mockResolvedValue(undefined)
+  vi.mocked(db.addDistance).mockResolvedValue({
+    id: 'dist-2', event_id: 'evt-1', name: '21 km',
+    start_time: '2026-01-01T08:00:00Z', overall_top_n: 3, default_top_n: 3,
+  })
 
   Object.defineProperty(navigator, 'onLine', {
     value: true, writable: true, configurable: true,
@@ -152,5 +161,30 @@ describe('Settings Page — Access Password', () => {
   it('shows athlete count in Athletes section header', async () => {
     await renderPage()
     expect(await screen.findByText(/athletes \(0\)/i)).toBeInTheDocument()
+  })
+
+  it('"Add Distance" button opens the inline add form', async () => {
+    await renderPage()
+    // The Distances section is open by default (openSection === 1)
+    fireEvent.click(screen.getByRole('button', { name: /add distance/i }))
+    expect(screen.getByPlaceholderText('e.g. 10')).toBeInTheDocument()
+  })
+
+  it('submitting add-distance form calls addDistance with "{n} km"', async () => {
+    await renderPage()
+    fireEvent.click(screen.getByRole('button', { name: /add distance/i }))
+    fireEvent.change(screen.getByPlaceholderText('e.g. 10'), { target: { value: '21' } })
+    fireEvent.click(screen.getByRole('button', { name: /^add$/i }))
+    await waitFor(() => {
+      expect(vi.mocked(db.addDistance)).toHaveBeenCalledWith('evt-1', '21 km', expect.any(String))
+    })
+  })
+
+  it('empty distance name shows "Enter a valid distance" error', async () => {
+    await renderPage()
+    fireEvent.click(screen.getByRole('button', { name: /add distance/i }))
+    fireEvent.click(screen.getByRole('button', { name: /^add$/i }))
+    expect(screen.getByText('Enter a valid distance')).toBeInTheDocument()
+    expect(vi.mocked(db.addDistance)).not.toHaveBeenCalled()
   })
 })

@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ChevronDown, ChevronUp, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronUp, Trash2, Plus } from 'lucide-react'
 import type { Event, EventDistance, Athlete, SubgroupPrizeOverride } from '@/types'
 import DistanceList, { type DistanceRow, rowToStartTime } from '@/components/DistanceList'
 import AthleteImport from '@/components/AthleteImport'
@@ -20,6 +20,10 @@ export default function SettingsPage() {
   const [pwEditing, setPwEditing] = useState(false)
   const [pwInput, setPwInput] = useState('')
   const [pwError, setPwError] = useState<string | null>(null)
+  const [addingDist, setAddingDist] = useState(false)
+  const [newDistName, setNewDistName] = useState('')
+  const [newDistTime, setNewDistTime] = useState('07:00')
+  const [addDistError, setAddDistError] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -117,6 +121,28 @@ export default function SettingsPage() {
     }
   }
 
+  async function handleAddDistance() {
+    const name = newDistName.trim()
+    if (!name || Number(name) <= 0) { setAddDistError('Enter a valid distance'); return }
+    const date = distances[0]
+      ? new Date(distances[0].start_time).toISOString().slice(0, 10)
+      : new Date().toISOString().slice(0, 10)
+    try {
+      const { addDistance, getDistancesForEvent } = await import('@/lib/db')
+      const { saveDistances } = await import('@/lib/storage')
+      await addDistance(id, `${name} km`, rowToStartTime(date, newDistTime))
+      const updated = await getDistancesForEvent(id)
+      setDistances(updated)
+      saveDistances(id, updated)
+      setAddingDist(false)
+      setNewDistName('')
+      setNewDistTime('07:00')
+      setAddDistError(null)
+    } catch {
+      setAddDistError('Failed to add. Try again.')
+    }
+  }
+
   if (!event) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -177,6 +203,54 @@ export default function SettingsPage() {
                 )}
               </div>
             ))}
+            {addingDist ? (
+              <div className="space-y-2 pt-2">
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="number"
+                    value={newDistName}
+                    onChange={e => { setNewDistName(e.target.value); setAddDistError(null) }}
+                    placeholder="e.g. 10"
+                    min="0.01"
+                    step="any"
+                    autoFocus
+                    className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+                  />
+                  <span className="text-sm text-gray-500 shrink-0">km</span>
+                  <input
+                    type="time"
+                    value={newDistTime}
+                    onChange={e => setNewDistTime(e.target.value)}
+                    className="w-28 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+                  />
+                </div>
+                {addDistError && <p className="text-red-500 text-sm">{addDistError}</p>}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleAddDistance}
+                    className="flex-1 bg-black text-white rounded-xl py-2.5 text-sm font-medium"
+                  >
+                    Add
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setAddingDist(false); setAddDistError(null) }}
+                    className="flex-1 border border-gray-200 rounded-xl py-2.5 text-sm"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setAddingDist(true)}
+                className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 mt-1"
+              >
+                <Plus size={14} /> Add Distance
+              </button>
+            )}
           </div>
         )}
       </div>
