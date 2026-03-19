@@ -51,7 +51,8 @@ export function startSpeechRecognition(
   lang: string,
   capturedAt: string,
   onResult: (result: SpeechResult) => void,
-  onError: (error: string) => void
+  onError: (error: string) => void,
+  onInterim?: (transcript: string) => void
 ): () => void {
   const SpeechRecognition =
     ((window as unknown) as { SpeechRecognition?: any; webkitSpeechRecognition?: any })
@@ -74,6 +75,7 @@ export function startSpeechRecognition(
   recognition.onresult = (event: any) => {
     for (let i = event.resultIndex; i < event.results.length; i++) {
       const transcript = event.results[i][0].transcript
+      onInterim?.(transcript)
       const bib = parseTranscriptToBib(transcript)
       if (bib) {
         resultFired = true

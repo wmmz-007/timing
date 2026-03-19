@@ -20,6 +20,7 @@ interface Props {
 
 export default function CaptureScreen({ event, distances, athletes: _athletes }: Props) {
   const [listening, setListening] = useState(false)
+  const [interimTranscript, setInterimTranscript] = useState('')
   const [paused, setPaused] = useState(false)
   const [overwriteBib, setOverwriteBib] = useState<string | null>(null)
   const [toasts, setToasts] = useState<Toast[]>([])
@@ -77,7 +78,7 @@ export default function CaptureScreen({ event, distances, athletes: _athletes }:
     }
   }, [])
 
-  function startListeningSession(capturedAt: string, myGen: number, onErrorExtra?: () => void) {
+  function startListeningSession(capturedAt: string, myGen: number, onErrorExtra?: () => void, onInterimCb?: (t: string) => void) {
     stopRef.current = startSpeechRecognition(
       'th-TH',
       capturedAt,
@@ -85,19 +86,22 @@ export default function CaptureScreen({ event, distances, athletes: _athletes }:
         if (sessionGenRef.current !== myGen) return
         setListening(false)
         listeningRef.current = false
+        setInterimTranscript('')
         handleResult(result)
       },
       (error) => {
         if (sessionGenRef.current !== myGen) return
         // If user is still holding → restart regardless of error type (including no-speech timeout)
         if (listeningRef.current) {
-          startListeningSession(capturedAt, myGen, onErrorExtra)
+          startListeningSession(capturedAt, myGen, onErrorExtra, onInterimCb)
           return
         }
         setListening(false)
         listeningRef.current = false
+        setInterimTranscript('')
         onErrorExtra?.()
-      }
+      },
+      onInterimCb
     )
   }
 
@@ -153,13 +157,14 @@ export default function CaptureScreen({ event, distances, athletes: _athletes }:
     const myGen = ++sessionGenRef.current
     setListening(true)
     listeningRef.current = true
-    startListeningSession(capturedAt, myGen)
+    startListeningSession(capturedAt, myGen, undefined, (t) => setInterimTranscript(t))
   }
 
   function handlePressEnd() {
     if (!listeningRef.current) return
     setListening(false)
     listeningRef.current = false
+    setInterimTranscript('')
     try { stopRef.current?.() } catch { /* already ended */ }
     stopRef.current = null
   }
@@ -260,12 +265,17 @@ export default function CaptureScreen({ event, distances, athletes: _athletes }:
         </div>
       )}
 
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 flex flex-col items-center justify-center gap-3">
         <MicButton
           listening={listening}
           onPressStart={handlePressStart}
           onPressEnd={handlePressEnd}
         />
+        {listening && (
+          <p className="text-sm text-gray-400 h-5 text-center">
+            {interimTranscript || '…'}
+          </p>
+        )}
       </div>
 
       <div className="w-full max-w-sm">
