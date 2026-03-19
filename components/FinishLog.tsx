@@ -9,7 +9,7 @@ interface Props {
 export default function FinishLog({ records, timezone }: Props) {
   if (records.length === 0) return null
 
-  const recent = [...records].reverse().slice(0, 10)
+  const recent = [...records].reverse().slice(0, 5)
 
   return (
     <div className="w-full">

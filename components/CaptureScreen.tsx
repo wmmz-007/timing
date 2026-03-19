@@ -272,9 +272,11 @@ export default function CaptureScreen({ event, distances, athletes: _athletes }:
           onPressEnd={handlePressEnd}
         />
         {listening && (
-          <p className="text-sm text-gray-400 h-5 text-center">
-            {interimTranscript || '…'}
-          </p>
+          <div className="w-48 h-12 rounded-xl bg-gray-900 border border-gray-700 flex items-center justify-center px-3">
+            <span className="text-white text-xl font-mono font-semibold tracking-widest">
+              {interimTranscript || <span className="text-gray-600">—</span>}
+            </span>
+          </div>
         )}
       </div>
 
