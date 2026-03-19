@@ -76,6 +76,7 @@ export function startSpeechRecognition(
     for (let i = event.resultIndex; i < event.results.length; i++) {
       const transcript = event.results[i][0].transcript
       onInterim?.(transcript)
+      if (!event.results[i].isFinal) continue  // interim results are display-only
       const bib = parseTranscriptToBib(transcript)
       if (bib) {
         resultFired = true

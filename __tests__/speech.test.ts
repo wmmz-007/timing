@@ -69,10 +69,10 @@ describe('startSpeechRecognition', () => {
     delete (globalThis as any).SpeechRecognition
   })
 
-  function makeResultEvent(transcript: string) {
+  function makeResultEvent(transcript: string, isFinal = true) {
     return {
       resultIndex: 0,
-      results: [{ 0: { transcript, confidence: 1 }, length: 1, isFinal: false }],
+      results: [{ 0: { transcript, confidence: 1 }, length: 1, isFinal }],
     }
   }
 
@@ -85,7 +85,7 @@ describe('startSpeechRecognition', () => {
     )
   })
 
-  it('fires onResult immediately on interim result with valid bib', () => {
+  it('fires onResult on final result with valid bib', () => {
     const onResult = vi.fn()
     startSpeechRecognition('th-TH', '2026-01-01T10:00:00.000Z', onResult, vi.fn())
     mockRec.onresult?.(makeResultEvent('235'))
@@ -146,5 +146,21 @@ describe('startSpeechRecognition', () => {
     mockRec.onend?.()
     expect(onError).toHaveBeenCalledOnce()
     expect(onError).toHaveBeenCalledWith('no-speech')
+  })
+
+  it('does NOT fire onResult on interim (non-final) result — display only', () => {
+    const onResult = vi.fn()
+    startSpeechRecognition('th-TH', '2026-01-01T10:00:00.000Z', onResult, vi.fn())
+    mockRec.onresult?.(makeResultEvent('235', false))  // isFinal: false
+    expect(onResult).not.toHaveBeenCalled()
+  })
+
+  it('calls onInterim for interim result but does not save bib', () => {
+    const onResult = vi.fn()
+    const onInterim = vi.fn()
+    startSpeechRecognition('th-TH', '2026-01-01T10:00:00.000Z', onResult, vi.fn(), onInterim)
+    mockRec.onresult?.(makeResultEvent('235', false))  // isFinal: false
+    expect(onInterim).toHaveBeenCalledWith('235')
+    expect(onResult).not.toHaveBeenCalled()
   })
 })
