@@ -47,12 +47,16 @@ const distanceMultiple: EventDistance[] = [
 const athletes: Athlete[] = []
 
 let capturedOnResult: ((r: speech.SpeechResult) => void) | null = null
+let capturedOnError: ((e: string) => void) | null = null
 
 vi.mock('@/lib/speech', () => ({
-  startSpeechRecognition: vi.fn((_lang: string, onResult: (r: speech.SpeechResult) => void, _onError: (e: string) => void) => {
-    capturedOnResult = onResult
-    return () => {}
-  }),
+  startSpeechRecognition: vi.fn(
+    (_lang: string, _capturedAt: string, onResult: (r: speech.SpeechResult) => void, onError: (e: string) => void) => {
+      capturedOnResult = onResult
+      capturedOnError = onError
+      return () => {}
+    }
+  ),
 }))
 
 vi.mock('@/lib/storage', () => ({
@@ -66,11 +70,22 @@ vi.mock('@/lib/sync', () => ({
   syncPendingRecords: vi.fn(),
 }))
 
+// Mock window.SpeechRecognition for pre-warm tests
+let mockPrewarm: { lang: string; interimResults: boolean; onerror: (() => void) | null; onend: (() => void) | null; start: ReturnType<typeof vi.fn>; stop: ReturnType<typeof vi.fn> } | null = null
+
 beforeEach(() => {
   capturedOnResult = null
+  capturedOnError = null
   vi.mocked(storage.getPendingRecords).mockReturnValue([])
   vi.mocked(storage.addPendingRecord).mockClear()
   localStorage.clear()
+
+  mockPrewarm = { lang: '', interimResults: false, onerror: null, onend: null, start: vi.fn(), stop: vi.fn() }
+  ;(window as any).SpeechRecognition = vi.fn(function() { return mockPrewarm })
+})
+
+afterEach(() => {
+  delete (window as any).SpeechRecognition
 })
 
 describe('CaptureScreen v2', () => {
@@ -79,10 +94,19 @@ describe('CaptureScreen v2', () => {
     expect(screen.getByText('Hold to Record Bib')).toBeInTheDocument()
   })
 
-  it('starts listening when mic button toggled', () => {
+  it('starts listening when mic button pressed down', () => {
     render(<CaptureScreen event={event} distances={[]} athletes={athletes} />)
     fireEvent.pointerDown(screen.getByRole('button', { name: /Hold to Record Bib/ }))
     expect(screen.getByText('Listening...')).toBeInTheDocument()
+  })
+
+  it('stops listening when mic button released (pointerUp)', () => {
+    render(<CaptureScreen event={event} distances={[]} athletes={athletes} />)
+    const btn = screen.getByRole('button', { name: /Hold to Record Bib/ })
+    fireEvent.pointerDown(btn)
+    expect(screen.getByText('Listening...')).toBeInTheDocument()
+    fireEvent.pointerUp(btn)
+    expect(screen.getByText('Hold to Record Bib')).toBeInTheDocument()
   })
 
   it('auto-saves bib and shows success toast on speech result', async () => {
@@ -108,40 +132,28 @@ describe('CaptureScreen v2', () => {
     expect(storage.addPendingRecord).not.toHaveBeenCalled()
   })
 
-  it('stops listening when mic button toggled again', () => {
-    render(<CaptureScreen event={event} distances={[]} athletes={athletes} />)
-    const btn = screen.getByRole('button', { name: /Hold to Record Bib/ })
-    fireEvent.pointerDown(btn)
-    expect(screen.getByText('Listening...')).toBeInTheDocument()
-    fireEvent.pointerDown(screen.getByRole('button', { name: /Listening/ }))
-    expect(screen.getByText('Hold to Record Bib')).toBeInTheDocument()
-  })
-
-  it('ignores garbled speech (no bib) and continues listening', async () => {
+  it('ignores garbled speech (no bib) and stops listening', async () => {
     render(<CaptureScreen event={event} distances={[]} athletes={athletes} />)
     fireEvent.pointerDown(screen.getByRole('button', { name: /Hold to Record Bib/ }))
     act(() => {
-      capturedOnResult?.({ transcript: 'อะไรก็ไม่รู้', bib: null, capturedAt: '2026-03-17T03:42:05.000Z' })
+      capturedOnError?.('')  // onend fires when no bib found → onError('')
     })
     expect(storage.addPendingRecord).not.toHaveBeenCalled()
-    expect(screen.getByText('Listening...')).toBeInTheDocument()
+    expect(screen.getByText('Hold to Record Bib')).toBeInTheDocument()
   })
 
-  it('saves bib with different number after อ่านใหม่ — clears overwriteBib', async () => {
+  it('saves bib with different number after Overwrite — clears overwriteBib', async () => {
     vi.mocked(storage.getPendingRecords).mockReturnValue([
       { local_id: 'lid-1', event_id: 'evt-1', bib_number: '235', finish_time: '2026-03-17T03:42:05.000Z', synced: false }
     ])
     render(<CaptureScreen event={event} distances={[]} athletes={athletes} />)
     fireEvent.pointerDown(screen.getByRole('button', { name: /Hold to Record Bib/ }))
-    // Trigger duplicate for 235
     act(() => {
       capturedOnResult?.({ transcript: 'สองสามห้า', bib: '235', capturedAt: '2026-03-17T03:42:10.000Z' })
     })
     await waitFor(() => expect(screen.getByText(/235 duplicate/)).toBeInTheDocument())
-    // Tap อ่านใหม่ — sets overwriteBib='235'
     vi.mocked(storage.getPendingRecords).mockReturnValue([])
     fireEvent.click(screen.getByText('Overwrite'))
-    // User speaks a DIFFERENT bib (100) — should be saved normally, not force-overwrite
     act(() => {
       capturedOnResult?.({ transcript: 'หนึ่งศูนย์ศูนย์', bib: '100', capturedAt: '2026-03-17T03:42:15.000Z' })
     })
@@ -149,7 +161,7 @@ describe('CaptureScreen v2', () => {
     expect(storage.addPendingRecord).toHaveBeenCalledOnce()
   })
 
-  it('duplicate toast dismissal (ข้าม) does not stop listening', async () => {
+  it('duplicate toast dismissal (Skip) returns to idle state', async () => {
     vi.mocked(storage.getPendingRecords).mockReturnValue([
       { local_id: 'lid-1', event_id: 'evt-1', bib_number: '235', finish_time: '2026-03-17T03:42:05.000Z', synced: false }
     ])
@@ -160,8 +172,28 @@ describe('CaptureScreen v2', () => {
     })
     await waitFor(() => expect(screen.getByText(/235 duplicate/)).toBeInTheDocument())
     fireEvent.click(screen.getByText('Skip'))
-    // Still listening
-    expect(screen.getByText('Listening...')).toBeInTheDocument()
+    // Session already ended when bib result fired; Skip just clears the toast
+    expect(screen.getByText('Hold to Record Bib')).toBeInTheDocument()
+  })
+
+  it('starts pre-warm SpeechRecognition on mount', () => {
+    render(<CaptureScreen event={event} distances={[]} athletes={athletes} />)
+    expect((window as any).SpeechRecognition).toHaveBeenCalled()
+    expect(mockPrewarm!.start).toHaveBeenCalled()
+  })
+
+  it('starts pre-warm again after saving a bib', async () => {
+    const MockSR = (window as any).SpeechRecognition as ReturnType<typeof vi.fn>
+    render(<CaptureScreen event={event} distances={[]} athletes={athletes} />)
+    const callCountAfterMount = MockSR.mock.calls.length
+    // Save a bib
+    fireEvent.pointerDown(screen.getByRole('button', { name: /Hold to Record Bib/ }))
+    act(() => {
+      capturedOnResult?.({ transcript: '235', bib: '235', capturedAt: '2026-03-17T03:42:05.000Z' })
+    })
+    await waitFor(() => expect(screen.getByText(/Bib 235/)).toBeInTheDocument())
+    // Pre-warm should have been called again after save
+    expect(MockSR.mock.calls.length).toBeGreaterThan(callCountAfterMount)
   })
 })
 
@@ -175,7 +207,6 @@ describe('CaptureScreen distance display', () => {
   it('single distance: renders Start label and the distance start time', () => {
     render(<CaptureScreen event={event} distances={distanceSingle} athletes={athletes} />)
     expect(screen.getByText('Start')).toBeInTheDocument()
-    // 2026-03-17T03:00:00.000Z in Asia/Bangkok (UTC+7) = 10:00:00
     expect(screen.getByText('10:00:00')).toBeInTheDocument()
   })
 
@@ -184,7 +215,6 @@ describe('CaptureScreen distance display', () => {
     expect(screen.queryByText('Start')).not.toBeInTheDocument()
     expect(screen.getByText('Marathon')).toBeInTheDocument()
     expect(screen.getByText('Half Marathon')).toBeInTheDocument()
-    // Marathon: 03:00 UTC = 10:00:00 Bangkok; Half Marathon: 04:00 UTC = 11:00:00 Bangkok
     expect(screen.getByText('10:00:00')).toBeInTheDocument()
     expect(screen.getByText('11:00:00')).toBeInTheDocument()
   })

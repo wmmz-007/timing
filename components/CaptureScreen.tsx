@@ -25,11 +25,11 @@ export default function CaptureScreen({ event, distances, athletes: _athletes }:
   const [toasts, setToasts] = useState<Toast[]>([])
   const [records, setRecords] = useState<PendingRecord[]>([])
 
-  // Refs mirror state for async loop closures (avoid stale captures)
   const listeningRef = useRef(false)
   const pausedRef = useRef(false)
   const overwriteBibRef = useRef<string | null>(null)
   const stopRef = useRef<(() => void) | null>(null)
+  const prewarmRef = useRef<{ stop: () => void } | null>(null)
 
   useEffect(() => { listeningRef.current = listening }, [listening])
   useEffect(() => { pausedRef.current = paused }, [paused])
@@ -46,24 +46,51 @@ export default function CaptureScreen({ event, distances, athletes: _athletes }:
     return () => window.removeEventListener('online', handleOnline)
   }, [event.id])
 
+  useEffect(() => {
+    startPrewarm()
+    // Abort mount pre-warm after 500ms to force browser subsystem init without holding mic open
+    const timer = setTimeout(() => {
+      try { prewarmRef.current?.stop() } catch { /* ignore */ }
+    }, 500)
+    return () => {
+      clearTimeout(timer)
+      try { prewarmRef.current?.stop() } catch { /* ignore */ }
+      prewarmRef.current = null
+    }
+  }, [])
+
+  function startPrewarm() {
+    const SpeechRecognition =
+      ((window as unknown) as { SpeechRecognition?: any; webkitSpeechRecognition?: any })
+        .SpeechRecognition ||
+      ((window as unknown) as { webkitSpeechRecognition?: any }).webkitSpeechRecognition
+    if (!SpeechRecognition) return
+    try {
+      const prewarm = new SpeechRecognition()
+      prewarm.lang = 'th-TH'
+      prewarm.interimResults = true
+      prewarmRef.current = prewarm
+      prewarm.onerror = () => { if (prewarmRef.current === prewarm) prewarmRef.current = null }
+      prewarm.onend   = () => { if (prewarmRef.current === prewarm) prewarmRef.current = null }
+      prewarm.start()
+    } catch { /* browser may not support */ }
+  }
+
   function refreshRecords() {
     setRecords(getPendingRecords(event.id))
   }
 
   function saveRecord(bib: string, capturedAt: string, force = false): string {
-    if (force) {
-      removeRecordByBib(event.id, bib)
-    }
+    if (force) removeRecordByBib(event.id, bib)
     const localId = uuidv4()
     addPendingRecord({ local_id: localId, event_id: event.id, bib_number: bib, finish_time: capturedAt, synced: false })
     refreshRecords()
+    startPrewarm()
     return localId
   }
 
-  // handleResult uses refs for overwriteBib so async loop closures always read current value
-  function handleResult(result: SpeechResult, isOneShot = false) {
-    if (!result.bib) return // garbled — loop restarts naturally
-
+  function handleResult(result: SpeechResult) {
+    if (!result.bib) return
     const existing = getPendingRecords(event.id).find((r) => r.bib_number === result.bib)
     const isOverwrite = overwriteBibRef.current === result.bib
 
@@ -88,35 +115,36 @@ export default function CaptureScreen({ event, distances, athletes: _athletes }:
         finishTime: result.capturedAt,
         localId,
       }])
-      if (isOneShot) {
+    }
+  }
+
+  function handlePressStart() {
+    if (listeningRef.current) return
+    if (pausedRef.current) return
+    const capturedAt = new Date().toISOString()
+    setListening(true)
+    listeningRef.current = true
+    stopRef.current = startSpeechRecognition(
+      'th-TH',
+      capturedAt,
+      (result) => {
+        setListening(false)
+        listeningRef.current = false
+        handleResult(result)
+      },
+      () => {
         setListening(false)
         listeningRef.current = false
       }
-    }
+    )
   }
 
-  async function runLoop() {
-    while (listeningRef.current && !pausedRef.current) {
-      await new Promise<void>((resolve) => {
-        stopRef.current = startSpeechRecognition(
-          'th-TH',
-          (result) => { handleResult(result); resolve() },
-          (_error: string) => resolve() // on error: restart loop
-        )
-      })
-    }
-  }
-
-  function handleToggle() {
-    if (!listening) {
-      setListening(true)
-      listeningRef.current = true
-      runLoop()
-    } else {
-      setListening(false)
-      listeningRef.current = false
-      try { stopRef.current?.() } catch { /* already ended */ }
-    }
+  function handlePressEnd() {
+    if (!listeningRef.current) return
+    setListening(false)
+    listeningRef.current = false
+    try { stopRef.current?.() } catch { /* already ended */ }
+    stopRef.current = null
   }
 
   function handleUndo(localId: string) {
@@ -127,7 +155,6 @@ export default function CaptureScreen({ event, distances, athletes: _athletes }:
 
   const handleDismiss = useCallback((toastId: string) => {
     setToasts((prev) => prev.filter((t) => t.toastId !== toastId))
-    // Does NOT touch paused — only duplicate-toast handlers clear paused
   }, [])
 
   function handleOverwrite(bib: string) {
@@ -136,24 +163,24 @@ export default function CaptureScreen({ event, distances, athletes: _athletes }:
     setPaused(false)
     pausedRef.current = false
     setToasts((prev) => prev.filter((t) => !(t.type === 'duplicate' && t.bib === bib)))
-
-    if (listeningRef.current) {
-      runLoop() // continuous mode: loop picks up overwriteBibRef.current on next result
-    } else {
-      // Manual-only mode: one-shot recognition session
-      setListening(true)
-      listeningRef.current = true
-      stopRef.current = startSpeechRecognition(
-        'th-TH',
-        (result) => handleResult(result, true),
-        (_error: string) => {
-          setListening(false)
-          listeningRef.current = false
-          setOverwriteBib(null)
-          overwriteBibRef.current = null
-        }
-      )
-    }
+    const capturedAt = new Date().toISOString()
+    setListening(true)
+    listeningRef.current = true
+    stopRef.current = startSpeechRecognition(
+      'th-TH',
+      capturedAt,
+      (result) => {
+        setListening(false)
+        listeningRef.current = false
+        handleResult(result)
+      },
+      () => {
+        setListening(false)
+        listeningRef.current = false
+        setOverwriteBib(null)
+        overwriteBibRef.current = null
+      }
+    )
   }
 
   function handleSkip(toastId: string) {
@@ -162,7 +189,6 @@ export default function CaptureScreen({ event, distances, athletes: _athletes }:
     setOverwriteBib(null)
     overwriteBibRef.current = null
     setToasts((prev) => prev.filter((t) => t.toastId !== toastId))
-    if (listeningRef.current) runLoop()
   }
 
   function handleManualSubmit(bib: string, capturedAt: string) {
@@ -221,7 +247,11 @@ export default function CaptureScreen({ event, distances, athletes: _athletes }:
       )}
 
       <div className="flex-1 flex items-center justify-center">
-        <MicButton listening={listening} onToggle={handleToggle} />
+        <MicButton
+          listening={listening}
+          onPressStart={handlePressStart}
+          onPressEnd={handlePressEnd}
+        />
       </div>
 
       <div className="w-full max-w-sm">
