@@ -81,7 +81,12 @@ beforeEach(() => {
   localStorage.clear()
 
   mockPrewarm = { lang: '', interimResults: false, onerror: null, onend: null, start: vi.fn(), stop: vi.fn() }
-  ;(window as any).SpeechRecognition = vi.fn(function() { return mockPrewarm })
+  const MockSpeechRecognition = vi.fn(function() {
+    // First call returns the tracked mockPrewarm; subsequent calls return fresh instances
+    if ((MockSpeechRecognition as any).mock.calls.length === 1) return mockPrewarm
+    return { lang: '', interimResults: false, onerror: null, onend: null, start: vi.fn(), stop: vi.fn() }
+  })
+  ;(window as any).SpeechRecognition = MockSpeechRecognition
 })
 
 afterEach(() => {
@@ -180,6 +185,30 @@ describe('CaptureScreen v2', () => {
     render(<CaptureScreen event={event} distances={[]} athletes={athletes} />)
     expect((window as any).SpeechRecognition).toHaveBeenCalled()
     expect(mockPrewarm!.start).toHaveBeenCalled()
+  })
+
+  it('manual save while paused clears paused state — mic button becomes pressable again', async () => {
+    vi.mocked(storage.getPendingRecords).mockReturnValue([
+      { local_id: 'lid-1', event_id: 'evt-1', bib_number: '235', finish_time: '2026-03-17T03:42:05.000Z', synced: false }
+    ])
+    render(<CaptureScreen event={event} distances={[]} athletes={athletes} />)
+    // Trigger duplicate (pauses mic)
+    fireEvent.pointerDown(screen.getByRole('button', { name: /Hold to Record Bib/ }))
+    act(() => {
+      capturedOnResult?.({ transcript: '235', bib: '235', capturedAt: '2026-03-17T03:42:10.000Z' })
+    })
+    await waitFor(() => expect(screen.getByText(/235 duplicate/)).toBeInTheDocument())
+    // Manual submit with a new bib while paused
+    vi.mocked(storage.getPendingRecords).mockReturnValue([])
+    fireEvent.click(screen.getByText('Enter Bib Manually'))
+    fireEvent.click(screen.getByRole('button', { name: '9' }))
+    fireEvent.click(screen.getByRole('button', { name: '9' }))
+    fireEvent.click(screen.getByRole('button', { name: '9' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    await waitFor(() => expect(storage.addPendingRecord).toHaveBeenCalled())
+    // Mic button should be pressable again (paused cleared)
+    fireEvent.pointerDown(screen.getByRole('button', { name: /Hold to Record Bib/ }))
+    expect(screen.getByText('Listening...')).toBeInTheDocument()
   })
 
   it('starts pre-warm again after saving a bib', async () => {

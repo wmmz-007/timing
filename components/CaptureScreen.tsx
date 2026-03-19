@@ -46,19 +46,6 @@ export default function CaptureScreen({ event, distances, athletes: _athletes }:
     return () => window.removeEventListener('online', handleOnline)
   }, [event.id])
 
-  useEffect(() => {
-    startPrewarm()
-    // Abort mount pre-warm after 500ms to force browser subsystem init without holding mic open
-    const timer = setTimeout(() => {
-      try { prewarmRef.current?.stop() } catch { /* ignore */ }
-    }, 500)
-    return () => {
-      clearTimeout(timer)
-      try { prewarmRef.current?.stop() } catch { /* ignore */ }
-      prewarmRef.current = null
-    }
-  }, [])
-
   function startPrewarm() {
     const SpeechRecognition =
       ((window as unknown) as { SpeechRecognition?: any; webkitSpeechRecognition?: any })
@@ -75,6 +62,19 @@ export default function CaptureScreen({ event, distances, athletes: _athletes }:
       prewarm.start()
     } catch { /* browser may not support */ }
   }
+
+  useEffect(() => {
+    startPrewarm()
+    // Abort mount pre-warm after 500ms to force browser subsystem init without holding mic open
+    const timer = setTimeout(() => {
+      try { prewarmRef.current?.stop() } catch { /* ignore */ }
+    }, 500)
+    return () => {
+      clearTimeout(timer)
+      try { prewarmRef.current?.stop() } catch { /* ignore */ }
+      prewarmRef.current = null
+    }
+  }, [])
 
   function refreshRecords() {
     setRecords(getPendingRecords(event.id))
@@ -204,6 +204,8 @@ export default function CaptureScreen({ event, distances, athletes: _athletes }:
         existingTime: existing.finish_time,
       }])
     } else {
+      setPaused(false)
+      pausedRef.current = false
       const localId = saveRecord(bib, capturedAt)
       setToasts((prev) => [...prev, {
         toastId: uuidv4(),
