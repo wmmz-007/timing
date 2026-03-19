@@ -49,6 +49,7 @@ export interface SpeechResult {
 
 export function startSpeechRecognition(
   lang: string,
+  capturedAt: string,
   onResult: (result: SpeechResult) => void,
   onError: (error: string) => void
 ): () => void {
@@ -61,17 +62,33 @@ export function startSpeechRecognition(
     onError('Web Speech API is not supported in this browser')
     return () => {}
   }
+
   const recognition = new SpeechRecognition()
   recognition.lang = lang
-  recognition.interimResults = false
+  recognition.interimResults = true
   recognition.maxAlternatives = 1
+
+  let resultFired = false
+
   recognition.onresult = (event: any) => {
-    const transcript = event.results[0][0].transcript
-    const capturedAt = new Date().toISOString()
-    const bib = parseTranscriptToBib(transcript)
-    onResult({ transcript, bib, capturedAt })
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const transcript = event.results[i][0].transcript
+      const bib = parseTranscriptToBib(transcript)
+      if (bib) {
+        resultFired = true
+        recognition.stop()
+        onResult({ transcript, bib, capturedAt })
+        return
+      }
+    }
   }
+
   recognition.onerror = (event: any) => { onError(event.error) }
+
+  recognition.onend = () => {
+    if (!resultFired) onError('') // triggers loop restart; skipped if bib already saved
+  }
+
   recognition.start()
   return () => recognition.stop()
 }
