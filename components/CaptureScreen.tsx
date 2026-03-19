@@ -30,6 +30,7 @@ export default function CaptureScreen({ event, distances, athletes: _athletes }:
   const overwriteBibRef = useRef<string | null>(null)
   const stopRef = useRef<(() => void) | null>(null)
   const prewarmRef = useRef<{ stop: () => void } | null>(null)
+  const sessionGenRef = useRef(0)
 
   useEffect(() => { listeningRef.current = listening }, [listening])
   useEffect(() => { pausedRef.current = paused }, [paused])
@@ -76,6 +77,25 @@ export default function CaptureScreen({ event, distances, athletes: _athletes }:
     }
   }, [])
 
+  function startListeningSession(capturedAt: string, myGen: number, onErrorExtra?: () => void) {
+    stopRef.current = startSpeechRecognition(
+      'th-TH',
+      capturedAt,
+      (result) => {
+        if (sessionGenRef.current !== myGen) return
+        setListening(false)
+        listeningRef.current = false
+        handleResult(result)
+      },
+      () => {
+        if (sessionGenRef.current !== myGen) return
+        setListening(false)
+        listeningRef.current = false
+        onErrorExtra?.()
+      }
+    )
+  }
+
   function refreshRecords() {
     setRecords(getPendingRecords(event.id))
   }
@@ -121,22 +141,14 @@ export default function CaptureScreen({ event, distances, athletes: _athletes }:
   function handlePressStart() {
     if (listeningRef.current) return
     if (pausedRef.current) return
+    // Stop pre-warm so it doesn't conflict with the real recognition session
+    try { prewarmRef.current?.stop() } catch { /* already ended */ }
+    prewarmRef.current = null
     const capturedAt = new Date().toISOString()
+    const myGen = ++sessionGenRef.current
     setListening(true)
     listeningRef.current = true
-    stopRef.current = startSpeechRecognition(
-      'th-TH',
-      capturedAt,
-      (result) => {
-        setListening(false)
-        listeningRef.current = false
-        handleResult(result)
-      },
-      () => {
-        setListening(false)
-        listeningRef.current = false
-      }
-    )
+    startListeningSession(capturedAt, myGen)
   }
 
   function handlePressEnd() {
@@ -163,24 +175,19 @@ export default function CaptureScreen({ event, distances, athletes: _athletes }:
     setPaused(false)
     pausedRef.current = false
     setToasts((prev) => prev.filter((t) => !(t.type === 'duplicate' && t.bib === bib)))
+    // Stop pre-warm so it doesn't conflict with the real recognition session
+    try { prewarmRef.current?.stop() } catch { /* already ended */ }
+    prewarmRef.current = null
+    // Overwrite path: capture timestamp now since there is no pointer-down event from MicButton.
+    // The original duplicate time is discarded intentionally — the operator is re-recording the bib.
     const capturedAt = new Date().toISOString()
+    const myGen = ++sessionGenRef.current
     setListening(true)
     listeningRef.current = true
-    stopRef.current = startSpeechRecognition(
-      'th-TH',
-      capturedAt,
-      (result) => {
-        setListening(false)
-        listeningRef.current = false
-        handleResult(result)
-      },
-      () => {
-        setListening(false)
-        listeningRef.current = false
-        setOverwriteBib(null)
-        overwriteBibRef.current = null
-      }
-    )
+    startListeningSession(capturedAt, myGen, () => {
+      setOverwriteBib(null)
+      overwriteBibRef.current = null
+    })
   }
 
   function handleSkip(toastId: string) {

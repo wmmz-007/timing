@@ -224,6 +224,34 @@ describe('CaptureScreen v2', () => {
     // Pre-warm should have been called again after save
     expect(MockSR.mock.calls.length).toBeGreaterThan(callCountAfterMount)
   })
+
+  it('discards stale onResult from first session when second press starts before result arrives', async () => {
+    render(<CaptureScreen event={event} distances={[]} athletes={athletes} />)
+    const btn = screen.getByRole('button', { name: /Hold to Record Bib/ })
+    // First press
+    fireEvent.pointerDown(btn)
+    const firstOnResult = capturedOnResult
+    // Release before result
+    fireEvent.pointerUp(btn)
+    // Second press immediately
+    fireEvent.pointerDown(btn)
+    // First session's stale onResult fires
+    act(() => {
+      firstOnResult?.({ transcript: '235', bib: '235', capturedAt: '2026-03-17T03:42:05.000Z' })
+    })
+    // Should NOT have saved — stale callback discarded
+    expect(storage.addPendingRecord).not.toHaveBeenCalled()
+    expect(screen.getByText('Listening...')).toBeInTheDocument()
+  })
+
+  it('stops pre-warm before starting real recognition session', () => {
+    render(<CaptureScreen event={event} distances={[]} athletes={athletes} />)
+    // Pre-warm should be running after mount
+    expect(mockPrewarm!.start).toHaveBeenCalled()
+    // Press the mic button — should stop the pre-warm first
+    fireEvent.pointerDown(screen.getByRole('button', { name: /Hold to Record Bib/ }))
+    expect(mockPrewarm!.stop).toHaveBeenCalled()
+  })
 })
 
 describe('CaptureScreen distance display', () => {
