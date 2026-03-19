@@ -69,6 +69,7 @@ export function startSpeechRecognition(
   recognition.maxAlternatives = 1
 
   let resultFired = false
+  let sessionEnded = false
 
   recognition.onresult = (event: any) => {
     for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -83,10 +84,13 @@ export function startSpeechRecognition(
     }
   }
 
-  recognition.onerror = (event: any) => { onError(event.error) }
+  recognition.onerror = (event: any) => {
+    sessionEnded = true
+    onError(event.error)
+  }
 
   recognition.onend = () => {
-    if (!resultFired) onError('') // triggers loop restart; skipped if bib already saved
+    if (!resultFired && !sessionEnded) onError('') // triggers loop restart; skipped if bib already saved
   }
 
   recognition.start()

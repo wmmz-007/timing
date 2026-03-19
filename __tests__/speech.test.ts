@@ -138,4 +138,13 @@ describe('startSpeechRecognition', () => {
     startSpeechRecognition('th-TH', '2026-01-01T10:00:00.000Z', vi.fn(), onError)
     expect(onError).toHaveBeenCalledWith('Web Speech API is not supported in this browser')
   })
+
+  it('calls onError only once when onerror fires then onend fires', () => {
+    const onError = vi.fn()
+    startSpeechRecognition('th-TH', '2026-01-01T10:00:00.000Z', vi.fn(), onError)
+    mockRec.onerror?.({ error: 'no-speech' })
+    mockRec.onend?.()
+    expect(onError).toHaveBeenCalledOnce()
+    expect(onError).toHaveBeenCalledWith('no-speech')
+  })
 })
