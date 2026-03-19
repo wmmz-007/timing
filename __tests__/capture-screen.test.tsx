@@ -137,13 +137,28 @@ describe('CaptureScreen v2', () => {
     expect(storage.addPendingRecord).not.toHaveBeenCalled()
   })
 
-  it('ignores garbled speech (no bib) and stops listening', async () => {
+  it('ignores garbled speech (no bib) and restarts while still holding', async () => {
+    render(<CaptureScreen event={event} distances={[]} athletes={athletes} />)
+    const btn = screen.getByRole('button', { name: /Hold to Record Bib/ })
+    fireEvent.pointerDown(btn)
+    const firstOnError = capturedOnError
+    act(() => {
+      firstOnError?.('')  // onend fires with no bib → should restart, not stop
+    })
+    expect(storage.addPendingRecord).not.toHaveBeenCalled()
+    // Button stays in listening state (session restarted)
+    expect(screen.getByText('Listening...')).toBeInTheDocument()
+    // Release → should return to idle
+    fireEvent.pointerUp(btn)
+    expect(screen.getByText('Hold to Record Bib')).toBeInTheDocument()
+  })
+
+  it('stops listening when real speech error occurs (not empty string)', async () => {
     render(<CaptureScreen event={event} distances={[]} athletes={athletes} />)
     fireEvent.pointerDown(screen.getByRole('button', { name: /Hold to Record Bib/ }))
     act(() => {
-      capturedOnError?.('')  // onend fires when no bib found → onError('')
+      capturedOnError?.('no-speech')  // real error → stop
     })
-    expect(storage.addPendingRecord).not.toHaveBeenCalled()
     expect(screen.getByText('Hold to Record Bib')).toBeInTheDocument()
   })
 

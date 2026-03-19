@@ -87,8 +87,13 @@ export default function CaptureScreen({ event, distances, athletes: _athletes }:
         listeningRef.current = false
         handleResult(result)
       },
-      () => {
+      (error) => {
         if (sessionGenRef.current !== myGen) return
+        // If session ended with no bib (error === '') and user is still holding → restart
+        if (error === '' && listeningRef.current) {
+          startListeningSession(capturedAt, myGen, onErrorExtra)
+          return
+        }
         setListening(false)
         listeningRef.current = false
         onErrorExtra?.()
