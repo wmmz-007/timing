@@ -153,12 +153,18 @@ describe('CaptureScreen v2', () => {
     expect(screen.getByText('Hold to Record Bib')).toBeInTheDocument()
   })
 
-  it('stops listening when real speech error occurs (not empty string)', async () => {
+  it('real speech error while holding also restarts (stays listening)', async () => {
     render(<CaptureScreen event={event} distances={[]} athletes={athletes} />)
-    fireEvent.pointerDown(screen.getByRole('button', { name: /Hold to Record Bib/ }))
+    const btn = screen.getByRole('button', { name: /Hold to Record Bib/ })
+    fireEvent.pointerDown(btn)
     act(() => {
-      capturedOnError?.('no-speech')  // real error → stop
+      capturedOnError?.('no-speech')  // real error, but user still holding → restart
     })
+    expect(storage.addPendingRecord).not.toHaveBeenCalled()
+    // Button stays in listening state (session restarted)
+    expect(screen.getByText('Listening...')).toBeInTheDocument()
+    // Release → stop
+    fireEvent.pointerUp(btn)
     expect(screen.getByText('Hold to Record Bib')).toBeInTheDocument()
   })
 
