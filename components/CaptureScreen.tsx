@@ -271,13 +271,11 @@ export default function CaptureScreen({ event, distances, athletes: _athletes }:
           onPressStart={handlePressStart}
           onPressEnd={handlePressEnd}
         />
-        {listening && (
-          <div className="w-48 h-12 rounded-xl bg-gray-900 border border-gray-700 flex items-center justify-center px-3">
-            <span className="text-white text-xl font-mono font-semibold tracking-widest">
-              {interimTranscript || <span className="text-gray-600">—</span>}
-            </span>
-          </div>
-        )}
+        <div className={`w-48 h-12 rounded-xl bg-gray-900 border border-gray-700 flex items-center justify-center px-3 transition-opacity duration-150 ${listening && interimTranscript ? 'opacity-100' : 'opacity-0'}`}>
+          <span className="text-white text-xl font-mono font-semibold tracking-widest">
+            {interimTranscript}
+          </span>
+        </div>
       </div>
 
       <div className="w-full max-w-sm">
