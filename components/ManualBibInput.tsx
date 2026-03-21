@@ -58,10 +58,10 @@ export default function ManualBibInput({
   const keys = [['1','2','3'],['4','5','6'],['7','8','9'],['','0','⌫']]
 
   return (
-    <div className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4">
+    <div className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 text-gray-900">
       <div className="flex items-center justify-between mb-3">
-        <span className="text-3xl font-bold tracking-widest font-mono min-h-[2rem]">
-          {bib || <span className="text-gray-300">—</span>}
+        <span className="text-3xl font-bold tracking-widest font-mono min-h-[2rem] text-gray-900">
+          {bib || <span className="text-gray-400">—</span>}
         </span>
         <button
           type="button"
@@ -79,8 +79,8 @@ export default function ManualBibInput({
             type="button"
             onClick={() => k === '⌫' ? handleBackspace() : k ? handleKey(k) : undefined}
             className={`py-4 rounded-xl text-xl font-medium ${
-              k === '⌫' ? 'bg-gray-200 text-gray-700' :
-              k ? 'bg-white border border-gray-200 active:bg-gray-100' :
+              k === '⌫' ? 'bg-gray-200 text-gray-800' :
+              k ? 'bg-white border border-gray-200 text-gray-900 active:bg-gray-100' :
               'invisible'
             }`}
           >

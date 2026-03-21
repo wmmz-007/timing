@@ -51,6 +51,8 @@ export default function CaptureScreen({ event, distances, athletes }: Props) {
   const bibCapturedAtRef = useRef<string | null>(null)
   const toggleHandlerRef = useRef<() => void>(() => {})
   const handleConfirmRef = useRef<() => void>(() => {})
+  /** Debounced push to Supabase after each local save (pending queue). */
+  const syncDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => { listeningRef.current = listening }, [listening])
   useEffect(() => { pausedRef.current = paused }, [paused])
@@ -61,12 +63,30 @@ export default function CaptureScreen({ event, distances, athletes }: Props) {
     setRecords(getPendingRecords(event.id))
   }, [event.id])
 
+  const scheduleSyncToDatabase = useCallback(() => {
+    const DEBOUNCE_MS = 1200
+    if (syncDebounceRef.current) clearTimeout(syncDebounceRef.current)
+    syncDebounceRef.current = setTimeout(() => {
+      syncDebounceRef.current = null
+      if (!navigator.onLine) return
+      void syncPendingRecords(event.id, () => {})
+    }, DEBOUNCE_MS)
+  }, [event.id])
+
   useEffect(() => {
-    function handleOnline() { syncPendingRecords(event.id, () => {}) }
+    function handleOnline() {
+      void syncPendingRecords(event.id, () => {})
+    }
     window.addEventListener('online', handleOnline)
     if (navigator.onLine) handleOnline()
     return () => window.removeEventListener('online', handleOnline)
   }, [event.id])
+
+  useEffect(() => {
+    return () => {
+      if (syncDebounceRef.current) clearTimeout(syncDebounceRef.current)
+    }
+  }, [])
 
   function startPrewarm() {
     const SpeechRecognition =
@@ -157,6 +177,7 @@ export default function CaptureScreen({ event, distances, athletes }: Props) {
     addPendingRecord({ local_id: localId, event_id: event.id, bib_number: bib, finish_time: capturedAt, synced: false })
     refreshRecords()
     startPrewarm()
+    scheduleSyncToDatabase()
     return localId
   }
 
