@@ -224,6 +224,16 @@ describe('CaptureScreen interim bib candidate', () => {
     await act(async () => { capturedOnInterim?.('1234', '1234') })
     expect(screen.getByTestId('bib-candidate-box')).toHaveTextContent('1234')
   })
+
+  it('big Enter button saves when bib present', async () => {
+    render(<CaptureScreen event={event} distances={[]} athletes={athletes} />)
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /กดเปิดไมค์/i })) })
+    await act(async () => { capturedOnInterim?.('321', '321') })
+    fireEvent.click(screen.getByTestId('big-enter-button'))
+    expect(storage.addPendingRecord).toHaveBeenCalledWith(
+      expect.objectContaining({ bib_number: '321', event_id: 'evt-1' })
+    )
+  })
 })
 
 describe('CaptureScreen Enter to confirm', () => {
@@ -315,6 +325,13 @@ describe('CaptureScreen session restart', () => {
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: /กดเปิดไมค์/i })) })
     act(() => { capturedOnError?.('no-speech') })
     expect(screen.getByText('กดปิดไมค์')).toBeInTheDocument()
+  })
+
+  it('closes mic on permission/device fatal errors', async () => {
+    render(<CaptureScreen event={event} distances={[]} athletes={athletes} />)
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /กดเปิดไมค์/i })) })
+    act(() => { capturedOnError?.('not-allowed') })
+    expect(screen.getByText('กดเปิดไมค์')).toBeInTheDocument()
   })
 
   it('discards stale interim callback after session gen changes', async () => {

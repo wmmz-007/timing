@@ -1,7 +1,8 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { Pencil, Trash2 } from 'lucide-react'
+import Link from 'next/link'
+import { LayoutDashboard, Pencil, Trash2 } from 'lucide-react'
 import EventSetupForm from '@/components/EventSetupForm'
 import EventEditForm from '@/components/EventEditForm'
 import { getEvents, getEventStats, deleteEvent } from '@/lib/db'
@@ -135,10 +136,21 @@ export default function EventsPage() {
 
   return (
     <main className="min-h-screen p-6 max-w-md mx-auto">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold">Events</h1>
-        <button onClick={handleLogout} className="text-sm text-gray-500">Logout</button>
+        <button onClick={handleLogout} className="text-sm text-gray-500">
+          Logout
+        </button>
       </div>
+
+      <Link
+        href="/dashboard"
+        className="flex items-center justify-center gap-2 w-full rounded-xl border border-gray-200 bg-white py-3.5 px-4 mb-4 text-sm font-medium text-gray-900 shadow-sm hover:bg-gray-50 active:bg-gray-100 transition-colors"
+        aria-label="Open live dashboard"
+      >
+        <LayoutDashboard size={20} className="text-gray-700" strokeWidth={1.75} />
+        Dashboard
+      </Link>
 
       <input
         role="searchbox"

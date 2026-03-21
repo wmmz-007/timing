@@ -77,6 +77,11 @@ export function startSpeechRecognition(
     onError('')
   }
 
-  recognition.start()
+  try {
+    recognition.start()
+  } catch {
+    onError('start-failed')
+    return () => {}
+  }
   return () => recognition.stop()
 }

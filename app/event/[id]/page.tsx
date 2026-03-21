@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Mic, ChevronLeft } from 'lucide-react'
+import { Mic, ChevronLeft, LayoutDashboard } from 'lucide-react'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -26,6 +26,17 @@ export default async function EventHubPage({ params }: Props) {
             <p className="text-base font-medium">Race Timing Record</p>
           </div>
           <Mic size={22} strokeWidth={1.75} />
+        </Link>
+
+        <Link
+          href="/dashboard"
+          className="flex items-center justify-between w-full border border-gray-200 bg-white text-gray-900 rounded-2xl px-6 py-4 hover:bg-gray-50"
+        >
+          <div>
+            <p className="text-base font-medium">Live dashboard</p>
+            <p className="text-xs text-gray-500 mt-0.5">ดูจำนวนฟินิชแบบอัปเดต</p>
+          </div>
+          <LayoutDashboard size={22} strokeWidth={1.75} className="text-gray-700" />
         </Link>
 
       </div>

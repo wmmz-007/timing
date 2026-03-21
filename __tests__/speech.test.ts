@@ -145,6 +145,15 @@ describe('startSpeechRecognition', () => {
     expect(mockRec.start).toHaveBeenCalledOnce()
   })
 
+  it('calls onError when recognition.start throws', () => {
+    mockRec.start = vi.fn(() => { throw new Error('boom') })
+    const onError = vi.fn()
+    const stop = startSpeechRecognition('th-TH', vi.fn(), onError)
+    expect(onError).toHaveBeenCalledWith('start-failed')
+    stop()
+    expect(mockRec.stop).not.toHaveBeenCalled()
+  })
+
   it('returned stop function calls recognition.stop()', () => {
     const stop = startSpeechRecognition('th-TH', vi.fn(), vi.fn())
     stop()

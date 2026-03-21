@@ -102,6 +102,10 @@ export default function CaptureScreen({ event, distances, athletes }: Props) {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
+  function shouldRestartSpeech(error: string): boolean {
+    return !['not-allowed', 'service-not-allowed', 'audio-capture', 'start-failed'].includes(error)
+  }
+
   useEffect(() => {
     startPrewarm()
     const timer = setTimeout(() => {
@@ -131,7 +135,7 @@ export default function CaptureScreen({ event, distances, athletes }: Props) {
       },
       (error) => {
         if (sessionGenRef.current !== myGen) return
-        if (listeningRef.current) {
+        if (listeningRef.current && shouldRestartSpeech(error)) {
           if (interimBibRef.current === null) setInterimTranscript('')
           startListeningSession()
         } else {
@@ -419,7 +423,7 @@ export default function CaptureScreen({ event, distances, athletes }: Props) {
             >
               <span className="text-xs text-gray-400 uppercase tracking-wider">BIB</span>
               <span className="text-4xl font-mono font-bold text-white text-center tracking-widest break-words max-w-full leading-tight">
-                {interimBib ?? (interimTranscript.trim() ? interimTranscript : '—')}
+                {interimBib ?? '—'}
               </span>
               <span className="text-xs text-gray-400 mt-1 text-center">
                 {interimBib
@@ -453,6 +457,16 @@ export default function CaptureScreen({ event, distances, athletes }: Props) {
                 พูดใหม่
               </button>
             </div>
+            <button
+              type="button"
+              data-testid="big-enter-button"
+              aria-label="Confirm and save bib"
+              onClick={() => handleConfirm()}
+              disabled={interimBib === null}
+              className="md:hidden w-full max-w-[min(100%,20rem)] mt-2 rounded-2xl bg-emerald-600 px-4 py-4 text-lg font-semibold text-white shadow-lg active:scale-[0.98] disabled:opacity-40 disabled:active:scale-100"
+            >
+              Enter — บันทึก
+            </button>
           </div>
         )}
       </div>
