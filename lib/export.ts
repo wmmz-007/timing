@@ -43,6 +43,22 @@ export function generateCsv(
   return [header, ...rows].join('\n')
 }
 
+export function generateChipComparisonCsv(records: FinishRecord[], event: Event): string {
+  const header = 'bib,finish_time_local,finish_time_utc'
+  const sorted = [...records].sort((a, b) => {
+    const ta = new Date(a.finish_time).getTime()
+    const tb = new Date(b.finish_time).getTime()
+    if (ta !== tb) return ta - tb
+    return a.bib_number.localeCompare(b.bib_number, undefined, { numeric: true })
+  })
+  const rows = sorted.map((r) => {
+    const local = formatTime(r.finish_time, event.timezone)
+    const utc = new Date(r.finish_time).toISOString()
+    return [r.bib_number, local, utc].join(',')
+  })
+  return [header, ...rows].join('\n')
+}
+
 export function downloadCsv(csv: string, filename: string): void {
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
