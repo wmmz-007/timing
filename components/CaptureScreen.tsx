@@ -33,6 +33,7 @@ export default function CaptureScreen({ event, distances, athletes }: Props) {
   const [listening, setListening] = useState(false)
   const [interimTranscript, setInterimTranscript] = useState('')
   const [interimBib, setInterimBib] = useState<string | null>(null)
+  const [manualEditActive, setManualEditActive] = useState(false)
   const [paused, setPaused] = useState(false)
   const [overwriteBib, setOverwriteBib] = useState<string | null>(null)
   const [toasts, setToasts] = useState<Toast[]>([])
@@ -46,6 +47,7 @@ export default function CaptureScreen({ event, distances, athletes }: Props) {
   const prewarmRef = useRef<{ stop: () => void } | null>(null)
   const sessionGenRef = useRef(0)
   const interimBibRef = useRef<string | null>(null)
+  const manualEditActiveRef = useRef(false)
   const bibCapturedAtRef = useRef<string | null>(null)
   const toggleHandlerRef = useRef<() => void>(() => {})
   const handleConfirmRef = useRef<() => void>(() => {})
@@ -53,6 +55,7 @@ export default function CaptureScreen({ event, distances, athletes }: Props) {
   useEffect(() => { listeningRef.current = listening }, [listening])
   useEffect(() => { pausedRef.current = paused }, [paused])
   useEffect(() => { overwriteBibRef.current = overwriteBib }, [overwriteBib])
+  useEffect(() => { manualEditActiveRef.current = manualEditActive }, [manualEditActive])
 
   useEffect(() => {
     setRecords(getPendingRecords(event.id))
@@ -118,7 +121,7 @@ export default function CaptureScreen({ event, distances, athletes }: Props) {
       (transcript, bib) => {
         if (sessionGenRef.current !== myGen) return
         setInterimTranscript(transcript)
-        if (bib !== null) {
+        if (bib !== null && !manualEditActiveRef.current) {
           if (interimBibRef.current === null) {
             bibCapturedAtRef.current = new Date().toISOString()
           }
@@ -190,6 +193,7 @@ export default function CaptureScreen({ event, distances, athletes }: Props) {
       interimBibRef.current = null
       bibCapturedAtRef.current = null
       setInterimBib(null)
+      setManualEditActive(false)
       try { stopRef.current?.() } catch { /* already ended */ }
       stopRef.current = null
     } else {
@@ -216,6 +220,7 @@ export default function CaptureScreen({ event, distances, athletes }: Props) {
     bibCapturedAtRef.current = null
     setInterimBib(null)
     setInterimTranscript('')
+    setManualEditActive(false)
 
     if (!isDuplicateCase) {
       ++sessionGenRef.current
@@ -303,6 +308,38 @@ export default function CaptureScreen({ event, distances, athletes }: Props) {
     }
   }
 
+  function handleBackspaceCandidate() {
+    if (pausedRef.current || !listeningRef.current) return
+    const current = interimBibRef.current ?? interimBib ?? ''
+    const next = current.slice(0, -1)
+    interimBibRef.current = next.length > 0 ? next : null
+    setInterimBib(interimBibRef.current)
+    setInterimTranscript('')
+    setManualEditActive(true)
+  }
+
+  function handleClearCandidate() {
+    if (pausedRef.current || !listeningRef.current) return
+    interimBibRef.current = null
+    bibCapturedAtRef.current = null
+    setInterimBib(null)
+    setInterimTranscript('')
+    setManualEditActive(true)
+  }
+
+  function handleSpeakAgain() {
+    if (pausedRef.current || !listeningRef.current) return
+    try { stopRef.current?.() } catch { /* ignore */ }
+    stopRef.current = null
+    ++sessionGenRef.current
+    interimBibRef.current = null
+    bibCapturedAtRef.current = null
+    setInterimBib(null)
+    setInterimTranscript('')
+    setManualEditActive(false)
+    startListeningSession()
+  }
+
   toggleHandlerRef.current = handleToggle
   handleConfirmRef.current = handleConfirm
 
@@ -375,19 +412,47 @@ export default function CaptureScreen({ event, distances, athletes }: Props) {
         />
 
         {listening && !paused && (
-          <div
-            data-testid="bib-candidate-box"
-            className="w-48 rounded-xl bg-gray-900 border border-gray-700 flex flex-col items-center justify-center px-3 py-4 gap-1"
-          >
-            <span className="text-xs text-gray-400 uppercase tracking-wider">BIB</span>
-            <span className="text-4xl font-mono font-bold text-white text-center tracking-widest break-words max-w-full leading-tight">
-              {interimBib ?? (interimTranscript.trim() ? interimTranscript : '—')}
-            </span>
-            <span className="text-xs text-gray-400 mt-1 text-center">
-              {interimBib
-                ? 'กด Enter เพื่อบันทึกเลขบิบนี้'
-                : 'พูดเลขบิบ แล้วกด Enter เพื่อบันทึก'}
-            </span>
+          <div className="flex flex-col items-center gap-2">
+            <div
+              data-testid="bib-candidate-box"
+              className="w-48 rounded-xl bg-gray-900 border border-gray-700 flex flex-col items-center justify-center px-3 py-4 gap-1"
+            >
+              <span className="text-xs text-gray-400 uppercase tracking-wider">BIB</span>
+              <span className="text-4xl font-mono font-bold text-white text-center tracking-widest break-words max-w-full leading-tight">
+                {interimBib ?? (interimTranscript.trim() ? interimTranscript : '—')}
+              </span>
+              <span className="text-xs text-gray-400 mt-1 text-center">
+                {interimBib
+                  ? 'กด Enter เพื่อบันทึกเลขบิบนี้'
+                  : 'พูดเลขบิบ แล้วกด Enter เพื่อบันทึก'}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                aria-label="backspace bib"
+                onClick={handleBackspaceCandidate}
+                className="rounded-md border border-gray-700 bg-gray-900 px-2 py-1 text-xs text-gray-200 hover:bg-gray-800"
+              >
+                ⌫
+              </button>
+              <button
+                type="button"
+                aria-label="clear bib"
+                onClick={handleClearCandidate}
+                className="rounded-md border border-gray-700 bg-gray-900 px-2 py-1 text-xs text-gray-200 hover:bg-gray-800"
+              >
+                Clear
+              </button>
+              <button
+                type="button"
+                aria-label="speak again"
+                onClick={handleSpeakAgain}
+                className="rounded-md border border-gray-700 bg-gray-900 px-2 py-1 text-xs text-gray-200 hover:bg-gray-800"
+              >
+                พูดใหม่
+              </button>
+            </div>
           </div>
         )}
       </div>
