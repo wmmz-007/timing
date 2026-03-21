@@ -5,7 +5,7 @@ import Link from 'next/link'
 import type { Event, FinishRecord, EventDistance, Athlete, SubgroupPrizeOverride } from '@/types'
 import { getEvent, getDistancesForEvent, getAthletesForEvent, getSubgroupOverrides, getFinishRecords } from '@/lib/db'
 import { getEventById, saveEvent, getDistances, saveDistances, getAthletes, saveAthletes } from '@/lib/storage'
-import { generateCsv, downloadCsv } from '@/lib/export'
+import { generateCsv, generateChipComparisonCsv, downloadCsv } from '@/lib/export'
 import { computeRanks } from '@/lib/ranking'
 import { Download, ChevronLeft } from 'lucide-react'
 
@@ -62,6 +62,14 @@ export default function ExportPage() {
     downloadCsv(csv, `timing-${date}.csv`)
   }
 
+  function handleDownloadChipComparison() {
+    if (!event) return
+    const csv = generateChipComparisonCsv(records, event)
+    const sorted = [...distances].sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+    const date = sorted[0]?.start_time.slice(0, 10) ?? new Date().toISOString().slice(0, 10)
+    downloadCsv(csv, `timing-chip-compare-${date}.csv`)
+  }
+
   if (!event) {
     return <div className="min-h-screen flex items-center justify-center"><p className="text-gray-400">Loading...</p></div>
   }
@@ -94,8 +102,20 @@ export default function ExportPage() {
         <Download size={18} /> Download CSV
       </button>
 
+      <button
+        type="button"
+        onClick={handleDownloadChipComparison}
+        disabled={records.length === 0}
+        className="mt-3 w-full border border-gray-300 bg-white text-gray-900 rounded-xl py-4 text-base font-medium disabled:opacity-40 flex items-center justify-center gap-2 hover:bg-gray-50"
+      >
+        <Download size={18} /> Download chip compare
+      </button>
+
       <p className="mt-4 text-xs text-gray-400 text-center">
         Columns: bib, name, distance, gender, age_group, finish_time, net_time, overall_rank, division_rank
+      </p>
+      <p className="mt-2 text-xs text-gray-400 text-center">
+        Chip compare: bib, finish_time_local, finish_time_utc
       </p>
     </main>
   )
