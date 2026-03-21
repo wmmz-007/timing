@@ -330,20 +330,14 @@ export default function CaptureScreen({ event, distances, athletes: _athletes }:
           onToggle={handleToggle}
         />
 
-        <div className={`w-48 h-12 rounded-xl bg-gray-900 border border-gray-700 flex items-center justify-center px-3 transition-opacity duration-150 ${listening && interimTranscript ? 'opacity-100' : 'opacity-0'}`}>
-          <span className="text-white text-xl font-mono font-semibold tracking-widest">
-            {interimTranscript}
-          </span>
-        </div>
-
         {listening && !paused && (
           <div
             data-testid="bib-candidate-box"
             className="w-48 rounded-xl bg-gray-900 border border-gray-700 flex flex-col items-center justify-center px-3 py-4 gap-1"
           >
             <span className="text-xs text-gray-400 uppercase tracking-wider">BIB</span>
-            <span className="text-4xl font-mono font-bold text-white">
-              {interimBib ?? '—'}
+            <span className="text-4xl font-mono font-bold text-white text-center tracking-widest break-words max-w-full leading-tight">
+              {interimBib ?? (interimTranscript.trim() ? interimTranscript : '—')}
             </span>
             <span className="text-xs text-gray-400 mt-1 text-center">
               {interimBib
