@@ -189,6 +189,41 @@ describe('CaptureScreen interim bib candidate', () => {
     act(() => { capturedOnError?.('') })
     expect(screen.getByTestId('bib-candidate-box')).toHaveTextContent('321')
   })
+
+  it('backspace removes last candidate digit', async () => {
+    render(<CaptureScreen event={event} distances={[]} athletes={athletes} />)
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /กดเปิดไมค์/i })) })
+    await act(async () => { capturedOnInterim?.('4567', '4567') })
+    fireEvent.click(screen.getByRole('button', { name: /backspace bib/i }))
+    expect(screen.getByTestId('bib-candidate-box')).toHaveTextContent('456')
+  })
+
+  it('clear resets bib candidate to dash', async () => {
+    render(<CaptureScreen event={event} distances={[]} athletes={athletes} />)
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /กดเปิดไมค์/i })) })
+    await act(async () => { capturedOnInterim?.('4567', '4567') })
+    fireEvent.click(screen.getByRole('button', { name: /clear bib/i }))
+    expect(screen.getByTestId('bib-candidate-box')).toHaveTextContent('—')
+  })
+
+  it('manual lock blocks new speech bib until speak-again', async () => {
+    render(<CaptureScreen event={event} distances={[]} athletes={athletes} />)
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /กดเปิดไมค์/i })) })
+    await act(async () => { capturedOnInterim?.('4567', '4567') })
+    fireEvent.click(screen.getByRole('button', { name: /backspace bib/i }))
+    await act(async () => { capturedOnInterim?.('1234', '1234') })
+    expect(screen.getByTestId('bib-candidate-box')).toHaveTextContent('456')
+  })
+
+  it('speak again clears lock and accepts fresh speech', async () => {
+    render(<CaptureScreen event={event} distances={[]} athletes={athletes} />)
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /กดเปิดไมค์/i })) })
+    await act(async () => { capturedOnInterim?.('4567', '4567') })
+    fireEvent.click(screen.getByRole('button', { name: /clear bib/i }))
+    fireEvent.click(screen.getByRole('button', { name: /speak again/i }))
+    await act(async () => { capturedOnInterim?.('1234', '1234') })
+    expect(screen.getByTestId('bib-candidate-box')).toHaveTextContent('1234')
+  })
 })
 
 describe('CaptureScreen Enter to confirm', () => {
