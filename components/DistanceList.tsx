@@ -44,13 +44,7 @@ export default function DistanceList({ rows, date, onChange, hideAdd }: Props) {
             required
           />
           <span className="text-sm text-gray-500 shrink-0">km</span>
-          <input
-            type="time"
-            value={row.time}
-            onChange={(e) => update(row.key, 'time', e.target.value)}
-            className="w-28 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black"
-            required
-          />
+          {/* start time (row.time) hidden — still sent on save via rowToStartTime */}
           <button
             type="button"
             onClick={() => removeRow(row.key)}

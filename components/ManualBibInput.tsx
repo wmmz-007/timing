@@ -4,11 +4,29 @@ import { X } from 'lucide-react'
 
 interface Props {
   onSubmit: (bib: string, capturedAt: string) => void
+  /** Controlled open state */
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  /** When false and closed, render nothing (use external trigger only) */
+  showDefaultTrigger?: boolean
 }
 
-export default function ManualBibInput({ onSubmit }: Props) {
+export default function ManualBibInput({
+  onSubmit,
+  open: openProp,
+  onOpenChange,
+  showDefaultTrigger = true,
+}: Props) {
+  const [internalOpen, setInternalOpen] = useState(false)
+  const controlled = openProp !== undefined
+  const open = controlled ? openProp : internalOpen
+
+  function setOpen(next: boolean) {
+    if (controlled) onOpenChange?.(next)
+    else setInternalOpen(next)
+  }
+
   const [bib, setBib] = useState('')
-  const [open, setOpen] = useState(false)
 
   function handleKey(digit: string) {
     setBib((prev) => prev + digit)
@@ -22,12 +40,13 @@ export default function ManualBibInput({ onSubmit }: Props) {
     if (!bib) return
     onSubmit(bib, new Date().toISOString())
     setBib('')
-    // Stay open — user can immediately enter next bib
   }
 
   if (!open) {
+    if (!showDefaultTrigger) return null
     return (
       <button
+        type="button"
         onClick={() => setOpen(true)}
         className="text-sm text-gray-400 underline underline-offset-2"
       >
@@ -45,6 +64,7 @@ export default function ManualBibInput({ onSubmit }: Props) {
           {bib || <span className="text-gray-300">—</span>}
         </span>
         <button
+          type="button"
           onClick={() => { setBib(''); setOpen(false) }}
           aria-label="close"
           className="text-gray-400 p-1"
@@ -56,6 +76,7 @@ export default function ManualBibInput({ onSubmit }: Props) {
         {keys.flat().map((k, i) => (
           <button
             key={i}
+            type="button"
             onClick={() => k === '⌫' ? handleBackspace() : k ? handleKey(k) : undefined}
             className={`py-4 rounded-xl text-xl font-medium ${
               k === '⌫' ? 'bg-gray-200 text-gray-700' :
@@ -68,6 +89,7 @@ export default function ManualBibInput({ onSubmit }: Props) {
         ))}
       </div>
       <button
+        type="button"
         onClick={handleSubmit}
         disabled={!bib}
         className="w-full py-3 rounded-xl bg-black text-white font-medium disabled:opacity-40"

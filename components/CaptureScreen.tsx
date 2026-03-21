@@ -1,15 +1,17 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { v4 as uuidv4 } from 'uuid'
+import { Keyboard, FileDown, Table2 } from 'lucide-react'
 import MicButton from './MicButton'
 import ManualBibInput from './ManualBibInput'
 import FinishLog from './FinishLog'
 import CaptureToast, { type Toast } from './CaptureToast'
-import type { Event, EventDistance, Athlete, PendingRecord } from '@/types'
+import type { Event, EventDistance, Athlete, PendingRecord, FinishRecord } from '@/types'
 import { startSpeechRecognition } from '@/lib/speech'
 import { addPendingRecord, getPendingRecords, removePendingRecord, removeRecordByBib } from '@/lib/storage'
 import { syncPendingRecords } from '@/lib/sync'
-import { formatTime } from '@/lib/time'
+import { generateCsv, generateChipComparisonCsv, downloadCsv } from '@/lib/export'
+import { computeRanks } from '@/lib/ranking'
 
 interface Props {
   event: Event
@@ -17,7 +19,17 @@ interface Props {
   athletes: Athlete[]
 }
 
-export default function CaptureScreen({ event, distances, athletes: _athletes }: Props) {
+function pendingToFinishRecords(records: PendingRecord[]): FinishRecord[] {
+  return records.map((r) => ({
+    id: r.local_id,
+    event_id: r.event_id,
+    bib_number: r.bib_number,
+    finish_time: r.finish_time,
+    created_at: r.finish_time,
+  }))
+}
+
+export default function CaptureScreen({ event, distances, athletes }: Props) {
   const [listening, setListening] = useState(false)
   const [interimTranscript, setInterimTranscript] = useState('')
   const [interimBib, setInterimBib] = useState<string | null>(null)
@@ -25,6 +37,7 @@ export default function CaptureScreen({ event, distances, athletes: _athletes }:
   const [overwriteBib, setOverwriteBib] = useState<string | null>(null)
   const [toasts, setToasts] = useState<Toast[]>([])
   const [records, setRecords] = useState<PendingRecord[]>([])
+  const [manualOpen, setManualOpen] = useState(false)
 
   const listeningRef = useRef(false)
   const pausedRef = useRef(false)
@@ -293,6 +306,25 @@ export default function CaptureScreen({ event, distances, athletes: _athletes }:
   toggleHandlerRef.current = handleToggle
   handleConfirmRef.current = handleConfirm
 
+  function exportDateSlug() {
+    const sorted = [...distances].sort(
+      (a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime(),
+    )
+    return sorted[0]?.start_time.slice(0, 10) ?? new Date().toISOString().slice(0, 10)
+  }
+
+  function handleExportFullCsv() {
+    const finishRecords = pendingToFinishRecords(records)
+    const rankMap = computeRanks(finishRecords, athletes, distances, [], event.overall_lockout)
+    const csv = generateCsv(finishRecords, event, athletes, distances, rankMap)
+    downloadCsv(csv, `timing-${exportDateSlug()}.csv`)
+  }
+
+  function handleExportChipCsv() {
+    const csv = generateChipComparisonCsv(pendingToFinishRecords(records), event)
+    downloadCsv(csv, `timing-chip-compare-${exportDateSlug()}.csv`)
+  }
+
   return (
     <div className="flex flex-col items-center px-6 pt-8 pb-6 gap-6 min-h-screen">
       <CaptureToast
@@ -304,25 +336,37 @@ export default function CaptureScreen({ event, distances, athletes: _athletes }:
         onDismiss={handleDismiss}
       />
 
-      {distances.length === 0 ? null : distances.length === 1 ? (
-        <div className="w-full text-center">
-          <p className="text-xs text-gray-400 uppercase tracking-wider font-medium">Start</p>
-          <p className="text-2xl font-mono font-semibold mt-0.5">
-            {formatTime(distances[0].start_time, event.timezone)}
-          </p>
-        </div>
-      ) : (
-        <div className="w-full text-center">
-          <div className="space-y-0.5">
-            {distances.map((d) => (
-              <p key={d.id} className="text-sm font-mono">
-                <span className="text-gray-400">{d.name}</span>{' '}
-                <span className="font-semibold">{formatTime(d.start_time, event.timezone)}</span>
-              </p>
-            ))}
-          </div>
-        </div>
-      )}
+      <div className="flex flex-wrap items-center justify-center gap-2 w-full max-w-sm px-1">
+        <button
+          type="button"
+          aria-label="Enter bib manually"
+          onClick={() => setManualOpen(true)}
+          className="inline-flex items-center gap-1.5 rounded-full border border-gray-600 bg-gray-900 px-3 py-1.5 text-xs font-medium text-gray-200 hover:bg-gray-800"
+        >
+          <Keyboard size={14} strokeWidth={2} />
+          Manual
+        </button>
+        <button
+          type="button"
+          aria-label="Download full results CSV"
+          onClick={handleExportFullCsv}
+          disabled={records.length === 0}
+          className="inline-flex items-center gap-1.5 rounded-full border border-gray-600 bg-gray-900 px-3 py-1.5 text-xs font-medium text-gray-200 hover:bg-gray-800 disabled:opacity-40"
+        >
+          <FileDown size={14} strokeWidth={2} />
+          CSV
+        </button>
+        <button
+          type="button"
+          aria-label="Download chip comparison CSV"
+          onClick={handleExportChipCsv}
+          disabled={records.length === 0}
+          className="inline-flex items-center gap-1.5 rounded-full border border-gray-600 bg-gray-900 px-3 py-1.5 text-xs font-medium text-gray-200 hover:bg-gray-800 disabled:opacity-40"
+        >
+          <Table2 size={14} strokeWidth={2} />
+          Chip
+        </button>
+      </div>
 
       <div className="flex-1 flex flex-col items-center justify-center gap-3">
         <MicButton
@@ -349,7 +393,12 @@ export default function CaptureScreen({ event, distances, athletes: _athletes }:
       </div>
 
       <div className="w-full max-w-sm">
-        <ManualBibInput onSubmit={handleManualSubmit} />
+        <ManualBibInput
+          open={manualOpen}
+          onOpenChange={setManualOpen}
+          showDefaultTrigger={false}
+          onSubmit={handleManualSubmit}
+        />
       </div>
 
       <div className="w-full max-w-sm">

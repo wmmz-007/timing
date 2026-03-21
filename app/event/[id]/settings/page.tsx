@@ -182,7 +182,7 @@ export default function SettingsPage() {
           className="w-full flex items-center justify-between px-5 py-4 text-left"
           onClick={() => setOpenSection(openSection === 1 ? 0 : 1)}
         >
-          <span className="font-medium">Distances &amp; Start Times</span>
+          <span className="font-medium">Distances</span>
           {openSection === 1 ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
         </button>
 

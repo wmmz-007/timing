@@ -85,13 +85,6 @@ export default function ExportPage() {
       <div className="bg-gray-50 rounded-2xl p-4 mb-6 text-sm space-y-1">
         <p className="text-gray-500">Records: <span className="font-semibold text-gray-900">{records.length}</span></p>
         <p className="text-gray-500">Athletes: <span className="font-semibold text-gray-900">{athletes.length}</span></p>
-        {distances.map((d) => (
-          <p key={d.id} className="text-gray-500">
-            {d.name}: <span className="font-mono font-semibold text-gray-900">
-              {new Intl.DateTimeFormat('en-GB', { timeZone: event.timezone, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(new Date(d.start_time))}
-            </span>
-          </p>
-        ))}
       </div>
 
       <button

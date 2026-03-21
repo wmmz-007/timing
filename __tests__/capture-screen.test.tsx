@@ -357,7 +357,7 @@ describe('CaptureScreen duplicate and overwrite', () => {
     await act(async () => { fireEvent.keyDown(window, { code: 'Enter' }) })
     await waitFor(() => screen.getByText(/235 duplicate/))
     vi.mocked(storage.getPendingRecords).mockReturnValue([])
-    fireEvent.click(screen.getByText('Enter Bib Manually'))
+    fireEvent.click(screen.getByRole('button', { name: /enter bib manually/i }))
     fireEvent.click(screen.getByRole('button', { name: '9' }))
     fireEvent.click(screen.getByRole('button', { name: '9' }))
     fireEvent.click(screen.getByRole('button', { name: '9' }))
@@ -368,23 +368,10 @@ describe('CaptureScreen duplicate and overwrite', () => {
 })
 
 describe('CaptureScreen distance display', () => {
-  it('zero distances: renders no Start label and no time', () => {
-    render(<CaptureScreen event={event} distances={[]} athletes={athletes} />)
-    expect(screen.queryByText('Start')).not.toBeInTheDocument()
-  })
-
-  it('single distance: renders Start label and the distance start time', () => {
-    render(<CaptureScreen event={event} distances={distanceSingle} athletes={athletes} />)
-    expect(screen.getByText('Start')).toBeInTheDocument()
-    expect(screen.getByText('10:00:00')).toBeInTheDocument()
-  })
-
-  it('multiple distances: renders each distance name and time, no Start label', () => {
+  it('does not show gun start time banner (single or multi distance)', () => {
     render(<CaptureScreen event={event} distances={distanceMultiple} athletes={athletes} />)
     expect(screen.queryByText('Start')).not.toBeInTheDocument()
-    expect(screen.getByText('Marathon')).toBeInTheDocument()
-    expect(screen.getByText('Half Marathon')).toBeInTheDocument()
-    expect(screen.getByText('10:00:00')).toBeInTheDocument()
-    expect(screen.getByText('11:00:00')).toBeInTheDocument()
+    expect(screen.queryByText('10:00:00')).not.toBeInTheDocument()
+    expect(screen.queryByText('Marathon')).not.toBeInTheDocument()
   })
 })

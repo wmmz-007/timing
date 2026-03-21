@@ -70,7 +70,7 @@ export default function EventSetupForm({ onCreated }: Props) {
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Distances & Start Times</label>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Distances</label>
         <DistanceList rows={distances} date={date} onChange={setDistances} />
       </div>
       <div>
