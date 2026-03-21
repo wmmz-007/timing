@@ -41,18 +41,10 @@ export function parseTranscriptToBib(transcript: string): string | null {
   return null
 }
 
-export interface SpeechResult {
-  transcript: string
-  bib: string | null
-  capturedAt: string
-}
-
 export function startSpeechRecognition(
   lang: string,
-  capturedAt: string,
-  onResult: (result: SpeechResult) => void,
+  onInterim: (transcript: string, bib: string | null) => void,
   onError: (error: string) => void,
-  onInterim?: (transcript: string) => void
 ): () => void {
   const SpeechRecognition =
     ((window as unknown) as { SpeechRecognition?: any; webkitSpeechRecognition?: any })
@@ -69,31 +61,20 @@ export function startSpeechRecognition(
   recognition.interimResults = true
   recognition.maxAlternatives = 1
 
-  let resultFired = false
-  let sessionEnded = false
-
   recognition.onresult = (event: any) => {
     for (let i = event.resultIndex; i < event.results.length; i++) {
       const transcript = event.results[i][0].transcript
-      onInterim?.(transcript)
-      if (!event.results[i].isFinal) continue  // interim results are display-only
       const bib = parseTranscriptToBib(transcript)
-      if (bib) {
-        resultFired = true
-        recognition.stop()
-        onResult({ transcript, bib, capturedAt })
-        return
-      }
+      onInterim(transcript, bib)
     }
   }
 
   recognition.onerror = (event: any) => {
-    sessionEnded = true
     onError(event.error)
   }
 
   recognition.onend = () => {
-    if (!resultFired && !sessionEnded) onError('') // triggers loop restart; skipped if bib already saved
+    onError('')
   }
 
   recognition.start()
