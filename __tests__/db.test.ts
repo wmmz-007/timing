@@ -9,7 +9,7 @@ vi.mock('@/lib/supabase', () => ({
 
 import { supabase } from '@/lib/supabase'
 import {
-  getEvent, createFinishRecord, getFinishRecords,
+  getEvent, createFinishRecord, getFinishRecords, getRecentFinishRecords,
   createEventWithDistances, getDistancesForEvent,
   getAthletesForEvent, upsertAthletes, getSubgroupOverrides, upsertSubgroupOverride, deleteSubgroupOverride,
   updateDistance, deleteDistanceAndAthletes,
@@ -18,7 +18,7 @@ import {
 
 const mockChain = (returnValue: unknown) => {
   const chain: Record<string, unknown> = {}
-  const methods = ['select', 'insert', 'update', 'delete', 'upsert', 'eq', 'in', 'order', 'single', 'maybeSingle']
+  const methods = ['select', 'insert', 'update', 'delete', 'upsert', 'eq', 'in', 'order', 'limit', 'single', 'maybeSingle']
   methods.forEach((m) => { chain[m] = vi.fn(() => chain) })
   chain['then'] = vi.fn((cb: (v: unknown) => unknown) => Promise.resolve(cb(returnValue)))
   return chain
@@ -60,6 +60,22 @@ describe('getFinishRecords', () => {
     const chain = mockChain({ data: mockRecords, error: null })
     vi.mocked(supabase.from).mockReturnValue(chain as unknown as ReturnType<typeof supabase.from>)
     const result = await getFinishRecords('evt-1')
+    expect(result).toEqual(mockRecords)
+  })
+})
+
+describe('getRecentFinishRecords', () => {
+  it('queries by event_id ordered by created_at desc with limit', async () => {
+    const mockRecords = [
+      { id: 'r2', event_id: 'evt-1', bib_number: '100', finish_time: '2026-03-17T08:00:00+07:00', created_at: '2026-03-17T01:05:00Z' },
+      { id: 'r1', event_id: 'evt-1', bib_number: '235', finish_time: '2026-03-17T07:55:00+07:00', created_at: '2026-03-17T01:00:00Z' },
+    ]
+    const chain = mockChain({ data: mockRecords, error: null })
+    vi.mocked(supabase.from).mockReturnValue(chain as unknown as ReturnType<typeof supabase.from>)
+    const result = await getRecentFinishRecords('evt-1', 20)
+    expect(supabase.from).toHaveBeenCalledWith('finish_records')
+    expect(chain.order).toHaveBeenCalledWith('created_at', { ascending: false })
+    expect(chain.limit).toHaveBeenCalledWith(20)
     expect(result).toEqual(mockRecords)
   })
 })

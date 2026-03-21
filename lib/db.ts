@@ -237,3 +237,18 @@ export async function getFinishRecords(eventId: string): Promise<FinishRecord[]>
   if (error) throw error
   return (data ?? []) as FinishRecord[]
 }
+
+/** Latest saved finishes first (by row creation time). */
+export async function getRecentFinishRecords(
+  eventId: string,
+  limit: number
+): Promise<FinishRecord[]> {
+  const { data, error } = await supabase
+    .from('finish_records')
+    .select('*')
+    .eq('event_id', eventId)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  if (error) throw error
+  return (data ?? []) as FinishRecord[]
+}

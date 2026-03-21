@@ -4,10 +4,13 @@ import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ChevronLeft, LayoutDashboard, RefreshCw } from 'lucide-react'
-import { getEvents, getEventStats } from '@/lib/db'
-import type { Event } from '@/types'
+import { getEvents, getRecentFinishRecords } from '@/lib/db'
+import { formatTime } from '@/lib/time'
+import type { Event, FinishRecord } from '@/types'
 
-type Row = { event: Event; recordCount: number; athleteCount: number }
+const RECENT_LIMIT = 30
+
+type Row = { event: Event; recent: FinishRecord[] }
 
 export default function EventDashboardClient() {
   const router = useRouter()
@@ -25,14 +28,10 @@ export default function EventDashboardClient() {
   const load = useCallback(async () => {
     try {
       const events = await getEvents()
-      const stats = await Promise.all(events.map((e) => getEventStats(e.id)))
-      setRows(
-        events.map((e, i) => ({
-          event: e,
-          recordCount: stats[i].recordCount,
-          athleteCount: stats[i].athleteCount,
-        })),
+      const recentLists = await Promise.all(
+        events.map((e) => getRecentFinishRecords(e.id, RECENT_LIMIT)),
       )
+      setRows(events.map((e, i) => ({ event: e, recent: recentLists[i] })))
       setUpdatedAt(new Date())
       setError(false)
     } catch {
@@ -65,7 +64,7 @@ export default function EventDashboardClient() {
             <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
           </div>
           <p className="text-sm text-gray-500 mt-1">
-            อัปเดตจำนวนฟินิชแบบใกล้เคียงเรียลไทม์ (รีเฟรชทุก ~4 วินาที)
+            ฟินิชล่าสุดต่องาน (เลข BIB + เวลา) — อัปเดตทุก ~4 วินาที
           </p>
         </div>
         <button
@@ -101,26 +100,39 @@ export default function EventDashboardClient() {
       ) : rows.length === 0 ? (
         <p className="text-gray-500">ยังไม่มีงาน — สร้างได้ที่ Events</p>
       ) : (
-        <ul className="space-y-3">
-          {rows.map(({ event, recordCount, athleteCount }) => (
+        <ul className="space-y-4">
+          {rows.map(({ event, recent }) => (
             <li key={event.id}>
-              <Link
-                href={`/event/${event.id}/capture`}
-                className="block rounded-2xl border border-gray-200 bg-white p-4 shadow-sm hover:border-gray-300 transition-colors"
-              >
-                <p className="font-medium text-gray-900">{event.name}</p>
-                <div className="mt-2 flex gap-4 text-sm text-gray-600">
-                  <span>
-                    ฟินิช:{' '}
-                    <strong className="text-gray-900 tabular-nums">{recordCount}</strong>
-                  </span>
-                  <span>
-                    นักวิ่ง:{' '}
-                    <strong className="text-gray-900 tabular-nums">{athleteCount}</strong>
-                  </span>
+              <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+                <div className="flex items-start justify-between gap-2 mb-3">
+                  <p className="font-medium text-gray-900 leading-snug">{event.name}</p>
+                  <Link
+                    href={`/event/${event.id}/capture`}
+                    className="shrink-0 text-xs text-gray-500 hover:text-gray-800 underline-offset-2 hover:underline"
+                  >
+                    Record
+                  </Link>
                 </div>
-                <p className="mt-2 text-xs text-gray-400">แตะเพื่อไปหน้า Record</p>
-              </Link>
+                {recent.length === 0 ? (
+                  <p className="text-sm text-gray-400">ยังไม่มีฟินิช</p>
+                ) : (
+                  <ul className="space-y-2 border-t border-gray-100 pt-3">
+                    {recent.map((r) => (
+                      <li
+                        key={r.id}
+                        className="flex items-center justify-between gap-3 text-sm"
+                      >
+                        <span className="font-semibold tabular-nums text-gray-900">
+                          {r.bib_number}
+                        </span>
+                        <span className="font-mono text-gray-700 tabular-nums">
+                          {formatTime(r.finish_time, event.timezone)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </li>
           ))}
         </ul>

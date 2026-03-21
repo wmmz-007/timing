@@ -34,7 +34,7 @@ export default async function EventHubPage({ params }: Props) {
         >
           <div>
             <p className="text-base font-medium">Live dashboard</p>
-            <p className="text-xs text-gray-500 mt-0.5">ดูจำนวนฟินิชแบบอัปเดต</p>
+            <p className="text-xs text-gray-500 mt-0.5">ฟินิชล่าสุด (BIB + เวลา)</p>
           </div>
           <LayoutDashboard size={22} strokeWidth={1.75} className="text-gray-700" />
         </Link>
